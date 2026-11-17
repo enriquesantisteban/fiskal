@@ -1,6 +1,6 @@
 # Fiskal
 
-Aplicacion privada para consultar y gestionar finanzas personales almacenadas en Google Sheets. Incluye secciones de baloncesto, ventas, compras, informatica y nominas.
+Aplicación privada para consultar y gestionar finanzas personales almacenadas en Google Sheets. Incluye secciones de baloncesto, ventas, compras, informatica y nominas.
 
 ## Requisitos
 
