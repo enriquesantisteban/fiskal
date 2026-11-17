@@ -7,7 +7,7 @@ export function LoginScreen({ setupNeeded = false }: { setupNeeded?: boolean }) 
   return (
     <main className="login-shell">
       <div className="login-grain" aria-hidden="true" />
-      <header className="login-top"><a className="brand" href="#"><span className="brand-mark">c</span><span>cuenta<span className="brand-period">.</span></span></a><span className="private-label"><LockKeyhole size={14} /> ESPACIO PRIVADO</span></header>
+      <header className="login-top"><a className="brand" href="#"><span className="brand-mark">f</span><span>Fiskal<span className="brand-period">.</span></span></a><span className="private-label"><LockKeyhole size={14} /> ESPACIO PRIVADO</span></header>
       <section className="login-content">
         <div className="login-copy">
           <div className="eyebrow"><span className="eyebrow-dot" /> TU DINERO, EN ORDEN</div>
