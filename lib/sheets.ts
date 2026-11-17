@@ -1,11 +1,7 @@
 import 'server-only'
 import { google } from 'googleapis'
 
-<<<<<<< HEAD
-const sheetNames = ['BALONCESTO_HISTÓRICO', 'VENTAS', 'COMPRAS', 'INFORMÁTICA', 'NÓMINAS'] as const
-=======
 const sheetNames = ['BALONCESTO', 'VENTAS', 'COMPRAS', 'INFORMÁTICA', 'NÓMINAS'] as const
->>>>>>> 62281e44b66a518ab73288ca4e44e8af418b8c53
 export type SheetName = (typeof sheetNames)[number]
 type SheetRow = Record<string, unknown> & { _rowNumber: number; _group?: string }
 export type RecordIdentity = { rowNumber: number; group?: string }
@@ -21,11 +17,7 @@ function sheetsClient() {
   return { api: google.sheets({ version: 'v4', auth }), spreadsheetId }
 }
 
-<<<<<<< HEAD
-const headers: Record<Exclude<SheetName, 'BALONCESTO_HISTÓRICO' | 'NÓMINAS'>, string[]> = {
-=======
 const headers: Record<Exclude<SheetName, 'BALONCESTO' | 'NÓMINAS'>, string[]> = {
->>>>>>> 62281e44b66a518ab73288ca4e44e8af418b8c53
   VENTAS: ['VENTAS', 'COMERCIO', 'DINERO APORTADO', 'DINERO RECOGIDO', 'BENEFICIO'],
   COMPRAS: ['COMPRAS', 'COMERCIO', 'DINERO PAGADO', 'A MEDIAS', 'REEMBOLSO', 'PRECIO FINAL'],
   'INFORMÁTICA': ['CLIENTE', 'TRABAJO', 'FECHA DE INICIO', 'FECHA DE FINALIZACIÓN', 'IMPORTE', 'PAGADO'],
@@ -58,13 +50,6 @@ function locateTable(grid: unknown[][], expected: string[], startColumn = 0): Ta
   return { headerRow, startColumn, width: expected.length, totalRow: totalRow < 0 ? null : totalRow }
 }
 
-<<<<<<< HEAD
-function tableDefinition(sheet: SheetName, body: Record<string, unknown>) {
-  const text = (key: string) => String(body[key] ?? '').trim()
-  const amount = (key: string) => { const value = Number(body[key] ?? 0); if (!Number.isFinite(value) || value < 0) throw new Error(`Importe no válido: ${key}`); return value }
-  if (sheet === 'BALONCESTO_HISTÓRICO') return { expected: ['MES', 'AÑO', 'DINERO INGRESADO'], startColumn: 0, values: [text('MES'), amount('AÑO'), amount('DINERO INGRESADO')] }
-  if (sheet === 'NÓMINAS') return { expected: ['EMPRESA', 'MES', 'AÑO', 'PAGADO'], startColumn: 0, values: [text('EMPRESA'), text('MES'), amount('AÑO'), amount('PAGADO')] }
-=======
 function locatePayrollTable(grid: unknown[][], company: string): TableLocation {
   for (let columnIndex = 0; columnIndex < Math.max(0, ...grid.map((row) => row.length)); columnIndex++) {
     const companyRow = grid.findIndex((row, index) => cell(row[columnIndex]) === cell(company) && cell(grid[index + 1]?.[columnIndex]) === 'MES' && cell(grid[index + 1]?.[columnIndex + 1]) === 'PAGADO')
@@ -86,7 +71,6 @@ function tableDefinition(sheet: SheetName, body: Record<string, unknown>, group?
     throw new Error('Selecciona una tabla válida de Baloncesto.')
   }
   if (sheet === 'NÓMINAS') return { expected: ['MES', 'PAGADO'], startColumn: 0, group: group ?? text('company'), values: [text('MES'), amount('PAGADO')] }
->>>>>>> 62281e44b66a518ab73288ca4e44e8af418b8c53
   if (sheet === 'VENTAS') {
     const contributed = amount('DINERO APORTADO')
     const collected = amount('DINERO RECOGIDO')
@@ -97,7 +81,6 @@ function tableDefinition(sheet: SheetName, body: Record<string, unknown>, group?
     const refund = amount('REEMBOLSO')
     return { expected: headers.COMPRAS, startColumn: 0, values: [text('COMPRAS'), text('COMERCIO'), paid, text('A MEDIAS'), refund, paid - refund] }
   }
-<<<<<<< HEAD
   const projectAmount = amount('IMPORTE')
   const paymentChoice = text('PAGADO')
   const paidAmount = paymentChoice === 'Cantidad específica' ? amount('IMPORTE PAGADO') : paymentChoice === 'Sí' ? projectAmount : paymentChoice === 'No' ? 0 : Number(paymentChoice)
@@ -106,16 +89,8 @@ function tableDefinition(sheet: SheetName, body: Record<string, unknown>, group?
 }
 
 function recordsForSheet(sheet: SheetName, data: Awaited<ReturnType<typeof readAllSheets>>): SheetRow[] {
-  if (sheet === 'BALONCESTO_HISTÓRICO') return data.basketballMonthly
-  if (sheet === 'NÓMINAS') return data.payroll
-=======
-  return { expected: headers['INFORMÁTICA'], startColumn: 0, values: headers['INFORMÁTICA'].map((key) => key === 'IMPORTE' ? amount(key) : text(key)) }
-}
-
-function recordsForSheet(sheet: SheetName, data: Awaited<ReturnType<typeof readAllSheets>>): SheetRow[] {
   if (sheet === 'BALONCESTO') return [...data.basketballMonthly, ...data.basketballSeasons]
   if (sheet === 'NÓMINAS') return data.payroll.flatMap(({ rows }) => rows)
->>>>>>> 62281e44b66a518ab73288ca4e44e8af418b8c53
   if (sheet === 'VENTAS') return data.sales
   if (sheet === 'COMPRAS') return data.purchases
   return data.it
@@ -126,14 +101,6 @@ export async function readAllSheets() {
   const response = await api.spreadsheets.values.batchGet({ spreadsheetId, ranges: sheetNames.map((name) => `'${name}'!A1:Z1000`) })
   const values = response.data.valueRanges ?? []
   const rows = (index: number) => values[index]?.values ?? []
-<<<<<<< HEAD
-  return {
-    basketballMonthly: table(rows(0), ['MES', 'AÑO', 'DINERO INGRESADO']),
-    sales: table(rows(1), headers.VENTAS),
-    purchases: table(rows(2), headers.COMPRAS),
-    it: table(rows(3), headers['INFORMÁTICA']),
-    payroll: table(rows(4), ['EMPRESA', 'MES', 'AÑO', 'PAGADO']),
-=======
   const basketball = rows(0)
   const payroll = rows(4)
   const payrollCompanies: { company: string; rows: SheetRow[] }[] = []
@@ -149,7 +116,6 @@ export async function readAllSheets() {
     purchases: table(rows(2), headers.COMPRAS),
     it: table(rows(3), headers['INFORMÁTICA']),
     payroll: payrollCompanies,
->>>>>>> 62281e44b66a518ab73288ca4e44e8af418b8c53
   }
 }
 
@@ -173,10 +139,7 @@ async function writeAtLocation(sheet: SheetName, location: TableLocation, values
 
 async function locationFor(sheet: SheetName, definition: ReturnType<typeof tableDefinition>) {
   const grid = await getGrid(sheet)
-<<<<<<< HEAD
-=======
   if (sheet === 'NÓMINAS') return locatePayrollTable(grid, definition.group ?? '')
->>>>>>> 62281e44b66a518ab73288ca4e44e8af418b8c53
   return locateTable(grid, definition.expected, definition.startColumn)
 }
 
@@ -189,11 +152,7 @@ export async function updateSheetRecord(sheet: SheetName, identity: RecordIdenti
   const data = await readAllSheets()
   const record = recordsForSheet(sheet, data).find((row) => row._rowNumber === identity.rowNumber && (!identity.group || row._group === identity.group))
   if (!record) throw new Error('El registro ya no existe o no pertenece a esta tabla. Actualiza la página e inténtalo de nuevo.')
-<<<<<<< HEAD
-  const definition = tableDefinition(sheet, body)
-=======
   const definition = tableDefinition(sheet, body, identity.group)
->>>>>>> 62281e44b66a518ab73288ca4e44e8af418b8c53
   const location = await locationFor(sheet, definition)
   if (identity.rowNumber <= location.headerRow + 1 || (location.totalRow !== null && identity.rowNumber >= location.totalRow + 1)) throw new Error('No se puede modificar una fila de cabecera o de total.')
   const { api, spreadsheetId } = sheetsClient()
@@ -220,15 +179,11 @@ export async function deleteSheetRecords(sheet: SheetName, identities: RecordIde
   for (const [group, groupIdentities] of groups) {
     const sample = records.find((row) => row._rowNumber === groupIdentities[0].rowNumber && (!group || row._group === group))
     if (!sample) throw new Error('No se encontró la tabla del registro seleccionado.')
-<<<<<<< HEAD
-    const definition = tableDefinition(sheet, {})
-=======
     const definition = sheet === 'NÓMINAS'
       ? tableDefinition(sheet, {}, group)
       : sheet === 'BALONCESTO'
         ? tableDefinition(sheet, {}, group)
         : tableDefinition(sheet, {})
->>>>>>> 62281e44b66a518ab73288ca4e44e8af418b8c53
     const location = await locationFor(sheet, definition)
     const width = location.width
     const start = column(location.startColumn)
