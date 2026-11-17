@@ -2,7 +2,11 @@ import { auth } from '@/auth'
 import { appendSheetRecord, deleteSheetRecords, type RecordIdentity, type SheetName, readAllSheets, updateSheetRecord } from '@/lib/sheets'
 import { NextResponse } from 'next/server'
 
+<<<<<<< HEAD
 const allowed = new Set<SheetName>(['BALONCESTO_HISTÓRICO', 'VENTAS', 'COMPRAS', 'INFORMÁTICA', 'NÓMINAS'])
+=======
+const allowed = new Set<SheetName>(['BALONCESTO', 'VENTAS', 'COMPRAS', 'INFORMÁTICA', 'NÓMINAS'])
+>>>>>>> 62281e44b66a518ab73288ca4e44e8af418b8c53
 export async function GET() {
   const session = await auth()
   if (!session?.user?.email || session.user.email.toLowerCase() !== process.env.AUTHORIZED_EMAIL?.trim().toLowerCase()) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
