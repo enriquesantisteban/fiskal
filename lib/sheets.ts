@@ -179,20 +179,12 @@ export async function deleteSheetRecords(sheet: SheetName, identities: RecordIde
     const record = records.find((row) => row._rowNumber === identity.rowNumber && (!identity.group || row._group === identity.group))
     if (!record) throw new Error('Uno de los registros seleccionados ya no existe. Actualiza la página e inténtalo de nuevo.')
   }
-  const groups = new Map<string, RecordIdentity[]>()
-  for (const identity of unique.values()) {
-    const key = identity.group ?? ''
-    groups.set(key, [...(groups.get(key) ?? []), identity])
-  }
   const { api, spreadsheetId } = sheetsClient()
-  for (const [group, groupIdentities] of groups) {
-    const sample = records.find((row) => row._rowNumber === groupIdentities[0].rowNumber && (!group || row._group === group))
-    if (!sample) throw new Error('No se encontró la tabla del registro seleccionado.')
-    const definition = tableDefinition(sheet, {})
-    const location = await locationFor(sheet, definition)
-    const width = location.width
-    const start = column(location.startColumn)
-    const end = column(location.startColumn + width - 1)
-    await api.spreadsheets.values.batchClear({ spreadsheetId, requestBody: { ranges: groupIdentities.map(({ rowNumber }) => `'${sheet}'!${start}${rowNumber}:${end}${rowNumber}`) } })
-  }
+  const spreadsheet = await api.spreadsheets.get({ spreadsheetId, fields: 'sheets.properties(sheetId,title)' })
+  const sheetId = spreadsheet.data.sheets?.find((entry) => entry.properties?.title === sheet)?.properties?.sheetId
+  if (sheetId === undefined) throw new Error(`No se encontró la pestaña ${sheet}.`)
+  const requests = [...unique.values()].sort((left, right) => right.rowNumber - left.rowNumber).map(({ rowNumber }) => ({
+    deleteDimension: { range: { sheetId, dimension: 'ROWS' as const, startIndex: rowNumber - 1, endIndex: rowNumber } },
+  }))
+  await api.spreadsheets.batchUpdate({ spreadsheetId, requestBody: { requests } })
 }
