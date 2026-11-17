@@ -7,6 +7,7 @@ type SheetRow = Record<string, unknown> & { _rowNumber: number; _group?: string 
 export type RecordIdentity = { rowNumber: number; group?: string }
 
 type TableLocation = { headerRow: number; startColumn: number; width: number; totalRow: number | null }
+type MappedHeader = { headerRow: number; columnIndexes: number[] }
 
 function sheetsClient() {
   const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL
@@ -23,26 +24,44 @@ const headers: Record<Exclude<SheetName, 'BALONCESTO' | 'NÓMINAS'>, string[]> =
   'INFORMÁTICA': ['CLIENTE', 'TRABAJO', 'FECHA DE INICIO', 'FECHA DE FINALIZACIÓN', 'IMPORTE', 'PAGADO'],
 }
 const column = (index: number) => { let n = index + 1; let out = ''; while (n) { const r = (n - 1) % 26; out = String.fromCharCode(65 + r) + out; n = Math.floor((n - 1) / 26) } return out }
-const cell = (value: unknown) => String(value ?? '').trim().toLocaleUpperCase('es')
+const cell = (value: unknown) => String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().replace(/\s+/g, ' ').toLocaleUpperCase('es')
+const headerAliases: Record<string, string[]> = { BENEFICIO: ['BENEFICIO GENERADO'], 'PRECIO FINAL': ['GASTO FINAL'] }
+const headerMatches = (value: unknown, expected: string) => {
+  const actual = cell(value)
+  return actual === cell(expected) || (headerAliases[expected] ?? []).some((alias) => actual === cell(alias))
+}
 const isTotalRow = (row: unknown[], startColumn: number) => cell(row[startColumn]).startsWith('TOTAL')
-const hasValues = (row: unknown[], startColumn: number, width: number) => row.slice(startColumn, startColumn + width).some((value) => String(value ?? '').trim() !== '')
-
 function findHeader(grid: unknown[][], expected: string[], startColumn?: number) {
   for (let rowIndex = 0; rowIndex < grid.length; rowIndex++) {
     const firstColumn = startColumn ?? 0
     const lastColumn = startColumn ?? Math.max(0, grid[rowIndex].length - expected.length)
     for (let columnIndex = firstColumn; columnIndex <= lastColumn; columnIndex++) {
-      if (expected.every((header, index) => cell(grid[rowIndex][columnIndex + index]) === header)) return { headerRow: rowIndex, startColumn: columnIndex }
+      if (expected.every((header, index) => headerMatches(grid[rowIndex][columnIndex + index], header))) return { headerRow: rowIndex, startColumn: columnIndex }
     }
   }
   return null
 }
 
-function table(allRows: unknown[][], expected: string[], startColumn?: number): SheetRow[] {
-  const location = findHeader(allRows, expected, startColumn)
+function findMappedHeader(grid: unknown[][], required: string[], optional: string[] = [], startColumn = 0): MappedHeader | null {
+  const expected = [...required, ...optional]
+  for (let rowIndex = 0; rowIndex < grid.length; rowIndex++) {
+    const used = new Set<number>()
+    const columnIndexes = expected.map((header) => {
+      const index = grid[rowIndex].findIndex((value, columnIndex) => columnIndex >= startColumn && !used.has(columnIndex) && headerMatches(value, header))
+      if (index >= 0) used.add(index)
+      return index
+    })
+    if (columnIndexes.slice(0, required.length).every((index) => index >= 0)) return { headerRow: rowIndex, columnIndexes }
+  }
+  return null
+}
+
+function table(allRows: unknown[][], expected: string[], startColumn?: number, optional: string[] = []): SheetRow[] {
+  const location = findMappedHeader(allRows, expected, optional, startColumn)
   if (!location) return []
-  return allRows.slice(location.headerRow + 1).map((row, index) => ({ row, rowNumber: location.headerRow + index + 2 })).filter(({ row }) => hasValues(row, location.startColumn, expected.length) && !isTotalRow(row, location.startColumn)).map(({ row, rowNumber }) => ({
-    ...Object.fromEntries(expected.map((header, i) => [header, row[location.startColumn + i] ?? ''])),
+  const columns = [...expected, ...optional]
+  return allRows.slice(location.headerRow + 1).map((row, index) => ({ row, rowNumber: location.headerRow + index + 2 })).filter(({ row }) => location.columnIndexes.some((columnIndex) => columnIndex >= 0 && String(row[columnIndex] ?? '').trim() !== '') && !isTotalRow(row, location.columnIndexes[0])).map(({ row, rowNumber }) => ({
+    ...Object.fromEntries(columns.map((header, index) => [header, location.columnIndexes[index] >= 0 ? row[location.columnIndexes[index]] ?? '' : ''])),
     _rowNumber: rowNumber,
   }))
 }
@@ -95,12 +114,18 @@ export async function readAllSheets() {
   const response = await api.spreadsheets.values.batchGet({ spreadsheetId, ranges: sheetNames.map((name) => `'${name}'!A1:Z1000`) })
   const values = response.data.valueRanges ?? []
   const rows = (index: number) => values[index]?.values ?? []
+  const basketballHeaders = ['MES', 'AÑO', 'DINERO INGRESADO']
+  const payrollHeaders = ['EMPRESA', 'MES', 'AÑO', 'PAGADO']
+  const warnings: string[] = []
+  if (!findMappedHeader(rows(0), basketballHeaders, ['TEMPORADA'])) warnings.push('No se encontraron las columnas MES, AÑO y DINERO INGRESADO en la pestaña BALONCESTO.')
+  if (!findMappedHeader(rows(4), payrollHeaders)) warnings.push('No se encontraron las columnas EMPRESA, MES, AÑO y PAGADO en la pestaña NÓMINAS.')
   return {
-    basketball: table(rows(0), ['MES', 'AÑO', 'TEMPORADA', 'DINERO INGRESADO']),
+    basketball: table(rows(0), basketballHeaders, undefined, ['TEMPORADA']),
     sales: table(rows(1), headers.VENTAS),
     purchases: table(rows(2), headers.COMPRAS),
     it: table(rows(3), headers['INFORMÁTICA']),
-    payroll: table(rows(4), ['EMPRESA', 'MES', 'AÑO', 'PAGADO']),
+    payroll: table(rows(4), payrollHeaders),
+    warnings,
   }
 }
 

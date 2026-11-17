@@ -6,8 +6,8 @@ import { ChartContainer, ChartTooltipContent, type ChartConfig } from '@/compone
 type FinanceRow = Record<string, unknown>
 
 const comparisonConfig = {
-  sales: { label: 'Ventas cobradas', color: 'var(--chart-1)' },
-  purchases: { label: 'Gasto final en compras', color: 'var(--chart-3)' },
+  sales: { label: 'Beneficio generado', color: 'var(--chart-1)' },
+  purchases: { label: 'Gasto final', color: 'var(--destructive)' },
 } satisfies ChartConfig
 
 const commerceConfig = {
