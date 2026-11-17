@@ -37,6 +37,24 @@ const amountPaid = (row: Row) => {
 }
 const recordId = (row: Row) => `${String(row._group ?? '')}:${String(row._rowNumber ?? '')}`
 const monthOptions = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+const monthNumber = (value: unknown) => {
+  const numeric = Number(value)
+  if (Number.isInteger(numeric) && numeric >= 1 && numeric <= 12) return numeric
+  const normalized = String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLocaleLowerCase('es')
+  return monthOptions.findIndex((month) => month.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es') === normalized) + 1
+}
+const yearNumber = (value: unknown) => Number(String(value ?? '').match(/\d{4}/)?.[0] ?? parseAmount(value))
+const seasonFor = (month: number, year: number) => {
+  if (!Number.isInteger(year) || year < 1) return null
+  if (month >= 9 && month <= 12) return `${year}/${year + 1}`
+  if (month >= 1 && month <= 6) return `${year - 1}/${year}`
+  return null
+}
+const seasonForRow = (row: Row) => String(row.TEMPORADA ?? '').trim() || seasonFor(monthNumber(row.MES), yearNumber(row.AÑO)) || ''
+const currentSeason = (date = new Date()) => {
+  const year = date.getFullYear()
+  return date.getMonth() + 1 >= 9 ? `${year}/${year + 1}` : `${year - 1}/${year}`
+}
 const fields: Record<Exclude<Section, 'Dashboard'>, { key: string; label: string; type?: string; options?: string[] }[]> = {
   Baloncesto: [{ key: 'MES', label: 'Mes', type: 'select', options: monthOptions }, { key: 'AÑO', label: 'Año', type: 'number' }, { key: 'DINERO INGRESADO', label: 'Dinero ingresado', type: 'number' }],
   Ventas: [{ key: 'VENTAS', label: 'Venta' }, { key: 'COMERCIO', label: 'Comercio' }, { key: 'DINERO APORTADO', label: 'Dinero aportado', type: 'number' }, { key: 'DINERO RECOGIDO', label: 'Dinero recogido', type: 'number' }],
@@ -52,6 +70,7 @@ export function FinanceApp({ user }: { user: { name?: string | null; email?: str
   const [recordToEdit, setRecordToEdit] = useState<Row | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [query, setQuery] = useState('')
+  const [selectedBasketballSeason, setSelectedBasketballSeason] = useState('')
   const [mobileNav, setMobileNav] = useState(false)
   const { data, error, isLoading } = useSWR('/api/sheets', fetcher, { revalidateOnFocus: true })
   const rows = useMemo(() => {
@@ -63,7 +82,19 @@ export function FinanceApp({ user }: { user: { name?: string | null; email?: str
   }, [active, data])
   const matchesQuery = (row: Row) => Object.entries(row).filter(([key]) => !key.startsWith('_')).some(([, value]) => String(value).toLowerCase().includes(query.toLowerCase()))
   const filteredRows = rows.filter(matchesQuery)
-  const basketballRows = (data?.basketball ?? []).filter(matchesQuery)
+  const basketballSeasonRows = useMemo(() => {
+    const totals = new Map<string, number>()
+    for (const row of data?.basketball ?? []) {
+      const season = seasonForRow(row)
+      if (!season) continue
+      totals.set(season, (totals.get(season) ?? 0) + parseAmount(row['DINERO INGRESADO']))
+    }
+    return [...totals].map(([season, amount]) => ({ TEMPORADA: season, 'DINERO GANADO': amount })).sort((left, right) => Number(left.TEMPORADA.slice(0, 4)) - Number(right.TEMPORADA.slice(0, 4)))
+  }, [data])
+  const currentSeasonLabel = currentSeason()
+  const currentSeasonIncome = basketballSeasonRows.find((row) => row.TEMPORADA === currentSeasonLabel)?.['DINERO GANADO'] ?? 0
+  const basketballRows = (data?.basketball ?? []).filter(matchesQuery).filter((row) => !selectedBasketballSeason || seasonForRow(row) === selectedBasketballSeason)
+  const filteredBasketballSeasonRows = basketballSeasonRows.filter(matchesQuery).filter((row) => !selectedBasketballSeason || row.TEMPORADA === selectedBasketballSeason)
   const payrollRows = data?.payroll ?? []
   const payrollCompanies = [...new Set(payrollRows.map((row) => String(row.EMPRESA ?? '').trim()).filter(Boolean))]
   const totals = {
@@ -101,6 +132,7 @@ export function FinanceApp({ user }: { user: { name?: string | null; email?: str
   function chooseRecordSection(section: Exclude<Section, 'Dashboard'>) {
     setActive(section)
     setQuery('')
+    setSelectedBasketballSeason('')
     setShowCategoryChooser(false)
     setRecordToEdit(null)
     setModal(true)
@@ -110,6 +142,9 @@ export function FinanceApp({ user }: { user: { name?: string | null; email?: str
     event.preventDefault()
     const formData = new FormData(event.currentTarget)
     const record: Record<string, FormDataEntryValue | string> = Object.fromEntries(formData.entries())
+    if (active === 'Baloncesto') {
+      record.TEMPORADA = seasonFor(monthNumber(record.MES), yearNumber(record.AÑO)) ?? ''
+    }
     const isEditing = Boolean(recordToEdit)
     const identity: RecordIdentity | undefined = recordToEdit?._rowNumber ? { rowNumber: recordToEdit._rowNumber, group: recordToEdit._group } : undefined
     const response = await fetch('/api/sheets', {
@@ -139,7 +174,7 @@ export function FinanceApp({ user }: { user: { name?: string | null; email?: str
     <aside className={`sidebar ${mobileNav ? 'sidebar-open' : ''}`}>
       <a className="brand sidebar-brand" href="#"><span className="brand-mark">f</span><span>Fiskal<span className="brand-period">.</span></span></a>
       <div className="nav-caption">TU ESPACIO</div>
-      <nav aria-label="Navegación principal">{sections.map(({ name, icon: Icon }) => <button key={name} className={`nav-link ${active === name ? 'nav-active' : ''}`} onClick={() => { setActive(name); setQuery(''); setSelectedIds(new Set()); setMobileNav(false); setModal(false); setRecordToEdit(null) }}><Icon size={18} strokeWidth={1.8} /><span>{name}</span>{name === 'Dashboard' && active === name && <span className="nav-indicator" />}</button>)}</nav>
+      <nav aria-label="Navegación principal">{sections.map(({ name, icon: Icon }) => <button key={name} className={`nav-link ${active === name ? 'nav-active' : ''}`} onClick={() => { setActive(name); setQuery(''); setSelectedBasketballSeason(''); setSelectedIds(new Set()); setMobileNav(false); setModal(false); setRecordToEdit(null) }}><Icon size={18} strokeWidth={1.8} /><span>{name}</span>{name === 'Dashboard' && active === name && <span className="nav-indicator" />}</button>)}</nav>
       <div className="sidebar-bottom"><div className="sheet-status"><span className="status-pulse" /><div><strong>Google Sheets</strong><small>{error ? 'Revisar conexión' : isLoading ? 'Conectando…' : 'Sincronización activa'}</small></div><FileSpreadsheet size={17} /></div><div className="profile"><div className="avatar">{user.image ? <img src={user.image} alt="" /> : <span>{user.name?.[0] ?? 'U'}</span>}</div><div className="profile-copy"><strong>{user.name ?? 'Mi cuenta'}</strong><small>{user.email}</small></div><button className="icon-button logout" aria-label="Cerrar sesión" onClick={() => signOut()}><LogOut size={16} /></button></div></div>
     </aside>
     {mobileNav && <button className="mobile-backdrop" aria-label="Cerrar navegación" onClick={() => setMobileNav(false)} />}
@@ -158,12 +193,12 @@ export function FinanceApp({ user }: { user: { name?: string | null; email?: str
           <div className="dashboard-bottom"><div><span className="bottom-dot" /> DATOS PRIVADOS · SOLO PARA TI</div><span>Actualizado al consultar tus hojas</span></div>
         </> : <>
           <div className="page-heading section-heading"><div><div className="eyebrow small-eyebrow"><span className="eyebrow-dot" /> GESTIÓN PERSONAL</div><h1>{active === 'Baloncesto' ? 'Baloncesto' : active}<span className="heading-period">.</span></h1><p>{sectionDescription(active)}</p></div><button className="button-primary" onClick={openAddRecord}><Plus size={17} /> Añadir registro</button></div>
-          {active === 'Baloncesto' ? <div className="split-stats"><SplitCard title="INGRESOS HISTÓRICOS" value={euros(totals.basketball)} foot={`${data?.basketball.length ?? 0} registros`} /></div> : cards[active] && <div className="split-stats">{cards[active]?.map((card, index) => <SplitCard key={card.title} {...card} tone={index % 2 ? 'split-lime' : undefined} />)}</div>}
+          {active === 'Baloncesto' ? <div className="split-stats"><SplitCard title="INGRESOS TEMPORADA ACTUAL" value={euros(currentSeasonIncome)} foot={`Temporada ${currentSeasonLabel}`} /><SplitCard title="INGRESOS HISTÓRICOS" value={euros(totals.basketball)} foot={`${data?.basketball.length ?? 0} registros`} tone="split-lime" /></div> : cards[active] && <div className="split-stats">{cards[active]?.map((card, index) => <SplitCard key={card.title} {...card} tone={index % 2 ? 'split-lime' : undefined} />)}</div>}
           {active === 'Nóminas' && <div className="company-chips">{payrollCompanies.map((company) => <span key={company}>{company}<b>{payrollRows.filter((row) => String(row.EMPRESA ?? '').trim() === company).length}</b></span>)}</div>}
           {active === 'Ventas' && <TopCommerceChart title="Top comercios por beneficio" rows={data?.sales ?? []} valueKey="BENEFICIO" valueLabel="Beneficio" />}
           {active === 'Compras' && <TopCommerceChart title="Top tiendas por dinero gastado" rows={data?.purchases ?? []} valueKey="PRECIO FINAL" valueLabel="Gasto final" />}
-          <section className="panel table-panel"><div className="table-toolbar"><div><span className="panel-kicker">REGISTROS</span><h2>{rows.length} {rows.length === 1 ? 'registro' : 'registros'}</h2></div><div className="table-controls">{selectedRows.length > 0 && <div className="table-actions"><button className="button-outline" onClick={() => { if (selectedRows.length === 1) { setRecordToEdit(selectedRows[0]); setModal(true) } }} disabled={selectedRows.length !== 1}><Pencil size={14} /> Modificar</button><button className="button-outline button-danger" onClick={deleteSelectedRecords}><Trash2 size={14} /> Eliminar ({selectedRows.length})</button></div>}<label className="searchbox"><Search size={16} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar en registros..." aria-label="Buscar en registros" />{query && <button aria-label="Limpiar búsqueda" onClick={() => setQuery('')}><X size={14} /></button>}</label></div></div>
-            {active === 'Baloncesto' ? <div className="basketball-tables"><BasketballTable title="BALONCESTO HISTÓRICO" columns={['MES', 'AÑO', 'DINERO INGRESADO']} rows={basketballRows} isLoading={isLoading} query={query} selectedIds={selectedIds} onToggle={toggleSelection} onAdd={openAddRecord} /></div> : <div className="table-scroll"><table><thead><tr><th className="table-select-cell"><span className="sr-only">Seleccionar</span></th>{tableColumns(active).map((column) => <th key={column}>{column}</th>)}</tr></thead><tbody>{isLoading ? <tr><td colSpan={tableColumns(active).length + 1} className="table-empty">Cargando desde Google Sheets…</td></tr> : filteredRows.length ? filteredRows.map((row) => <tr key={recordId(row)}><td className="table-select-cell"><input type="checkbox" className="table-select" aria-label={`Seleccionar registro ${String(row._rowNumber ?? '')}`} checked={selectedIds.has(recordId(row))} onChange={() => toggleSelection(row)} /></td>{tableColumns(active).map((key) => <td key={key}>{renderCell(key, row[key])}</td>)}</tr>) : <tr><td colSpan={tableColumns(active).length + 1} className="table-empty"><div className="empty-icon"><BarChart3 size={20} /></div><strong>{query ? 'No encontramos resultados' : 'Aún no hay registros'}</strong><span>{query ? 'Prueba con otra búsqueda.' : 'Añade tu primer registro para empezar.'}</span>{!query && <button className="button-outline" onClick={openAddRecord}><Plus size={15} /> Añadir registro</button>}</td></tr>}</tbody></table></div>}
+          <section className="panel table-panel"><div className="table-toolbar"><div><span className="panel-kicker">REGISTROS</span><h2>{active === 'Baloncesto' ? basketballRows.length : rows.length} {(active === 'Baloncesto' ? basketballRows.length : rows.length) === 1 ? 'registro' : 'registros'}</h2></div><div className="table-controls">{selectedRows.length > 0 && <div className="table-actions"><button className="button-outline" onClick={() => { if (selectedRows.length === 1) { setRecordToEdit(selectedRows[0]); setModal(true) } }} disabled={selectedRows.length !== 1}><Pencil size={14} /> Modificar</button><button className="button-outline button-danger" onClick={deleteSelectedRecords}><Trash2 size={14} /> Eliminar ({selectedRows.length})</button></div>}{active === 'Baloncesto' && <label className="season-filter">Temporada<select value={selectedBasketballSeason} onChange={(event) => { setSelectedBasketballSeason(event.target.value); setSelectedIds(new Set()) }} aria-label="Filtrar por temporada"><option value="">Todas las temporadas</option>{basketballSeasonRows.map((row) => <option key={row.TEMPORADA} value={row.TEMPORADA}>{row.TEMPORADA}</option>)}</select></label>}<label className="searchbox"><Search size={16} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar en registros..." aria-label="Buscar en registros" />{query && <button aria-label="Limpiar búsqueda" onClick={() => setQuery('')}><X size={14} /></button>}</label></div></div>
+            {active === 'Baloncesto' ? <div className="basketball-tables"><BasketballTable title="INGRESOS POR TEMPORADA" columns={['TEMPORADA', 'DINERO GANADO']} rows={filteredBasketballSeasonRows} isLoading={isLoading} query={query} selectedIds={selectedIds} onToggle={toggleSelection} onAdd={openAddRecord} selectable={false} /><BasketballTable title="BALONCESTO HISTÓRICO" columns={['MES', 'AÑO', 'TEMPORADA', 'DINERO INGRESADO']} rows={basketballRows} isLoading={isLoading} query={query} selectedIds={selectedIds} onToggle={toggleSelection} onAdd={openAddRecord} /></div> : <div className="table-scroll"><table><thead><tr><th className="table-select-cell"><span className="sr-only">Seleccionar</span></th>{tableColumns(active).map((column) => <th key={column}>{column}</th>)}</tr></thead><tbody>{isLoading ? <tr><td colSpan={tableColumns(active).length + 1} className="table-empty">Cargando desde Google Sheets…</td></tr> : filteredRows.length ? filteredRows.map((row) => <tr key={recordId(row)}><td className="table-select-cell"><input type="checkbox" className="table-select" aria-label={`Seleccionar registro ${String(row._rowNumber ?? '')}`} checked={selectedIds.has(recordId(row))} onChange={() => toggleSelection(row)} /></td>{tableColumns(active).map((key) => <td key={key}>{renderCell(key, row[key])}</td>)}</tr>) : <tr><td colSpan={tableColumns(active).length + 1} className="table-empty"><div className="empty-icon"><BarChart3 size={20} /></div><strong>{query ? 'No encontramos resultados' : 'Aún no hay registros'}</strong><span>{query ? 'Prueba con otra búsqueda.' : 'Añade tu primer registro para empezar.'}</span>{!query && <button className="button-outline" onClick={openAddRecord}><Plus size={15} /> Añadir registro</button>}</td></tr>}</tbody></table></div>}
             <div className="table-footer"><span>Mostrando {active === 'Baloncesto' ? basketballRows.length : filteredRows.length} de {rows.length} registros</span><span><span className="status-pulse" /> Sincronizado con Google Sheets</span></div>
           </section>
         </>}
@@ -174,14 +209,15 @@ export function FinanceApp({ user }: { user: { name?: string | null; email?: str
   </main>
 }
 
-function BasketballTable({ title, columns, rows, isLoading, query, selectedIds, onToggle, onAdd }: { title: string; columns: string[]; rows: Row[]; isLoading: boolean; query: string; selectedIds: Set<string>; onToggle: (row: Row) => void; onAdd: () => void }) {
-  return <section className="basketball-table"><h3>{title}</h3><div className="table-scroll"><table><thead><tr><th className="table-select-cell"><span className="sr-only">Seleccionar</span></th>{columns.map((column) => <th key={column}>{column}</th>)}</tr></thead><tbody>{isLoading ? <tr><td colSpan={columns.length + 1} className="table-empty">Cargando desde Google Sheets…</td></tr> : rows.length ? rows.map((row) => <tr key={recordId(row)}><td className="table-select-cell"><input type="checkbox" className="table-select" aria-label={`Seleccionar registro ${String(row._rowNumber ?? '')}`} checked={selectedIds.has(recordId(row))} onChange={() => onToggle(row)} /></td>{columns.map((key) => <td key={key}>{renderCell(key, row[key])}</td>)}</tr>) : <tr><td colSpan={columns.length + 1} className="table-empty"><strong>{query ? 'No encontramos resultados' : 'Aún no hay registros'}</strong><span>{query ? 'Prueba con otra búsqueda.' : 'Añade tu primer registro para empezar.'}</span>{!query && <button className="button-outline" onClick={onAdd}><Plus size={15} /> Añadir registro</button>}</td></tr>}</tbody></table></div></section>
+function BasketballTable({ title, columns, rows, isLoading, query, selectedIds, onToggle, onAdd, selectable = true }: { title: string; columns: string[]; rows: Row[]; isLoading: boolean; query: string; selectedIds: Set<string>; onToggle: (row: Row) => void; onAdd: () => void; selectable?: boolean }) {
+  const selectionColumn = selectable ? 1 : 0
+  return <section className="basketball-table"><h3>{title}</h3><div className="table-scroll"><table><thead><tr>{selectable && <th className="table-select-cell"><span className="sr-only">Seleccionar</span></th>}{columns.map((column) => <th key={column}>{column}</th>)}</tr></thead><tbody>{isLoading ? <tr><td colSpan={columns.length + selectionColumn} className="table-empty">Cargando desde Google Sheets…</td></tr> : rows.length ? rows.map((row) => <tr key={selectable ? recordId(row) : String(row.TEMPORADA ?? '')}>{selectable && <td className="table-select-cell"><input type="checkbox" className="table-select" aria-label={`Seleccionar registro ${String(row._rowNumber ?? '')}`} checked={selectedIds.has(recordId(row))} onChange={() => onToggle(row)} /></td>}{columns.map((key) => <td key={key}>{renderCell(key, row[key])}</td>)}</tr>) : <tr><td colSpan={columns.length + selectionColumn} className="table-empty"><strong>{query ? 'No encontramos resultados' : 'Aún no hay registros'}</strong><span>{query ? 'Prueba con otra búsqueda.' : 'Añade tu primer registro para empezar.'}</span>{!query && selectable && <button className="button-outline" onClick={onAdd}><Plus size={15} /> Añadir registro</button>}</td></tr>}</tbody></table></div></section>
 }
 
 function Kpi({ title, value, icon: Icon, tone, foot }: { title: string; value: string; icon: typeof ArrowUpRight; tone: string; foot: string }) { return <article className="kpi-card"><div className="kpi-top"><span>{title}</span><span className={`kpi-icon ${tone}`}><Icon size={17} /></span></div><strong className="kpi-value">{value}</strong><div className="kpi-foot"><span className="kpi-dash" />{foot}</div></article> }
 function SplitCard({ title, value, foot, tone }: { title: string; value: string; foot: string; tone?: string }) { return <div className={`split-card ${tone ?? ''}`}><span>{title}</span><strong>{value}</strong><small>{foot}</small></div> }
-function sectionDescription(section: Section) { return ({ Baloncesto: 'Consulta los ingresos históricos por mes y año.', Ventas: 'Sigue las ventas, aportaciones y el beneficio generado.', Compras: 'Registra tus compras, pagos y reembolsos.', 'Informática': 'Organiza trabajos, fechas de entrega e importes.', Nóminas: 'Consulta los pagos mensuales de cada empresa.' } as Record<string, string>)[section] ?? '' }
-function tableColumns(section: Section) { if (section === 'Baloncesto') return ['MES', 'AÑO', 'DINERO INGRESADO']; if (section === 'Ventas') return ['VENTAS', 'COMERCIO', 'DINERO APORTADO', 'DINERO RECOGIDO', 'BENEFICIO']; if (section === 'Compras') return ['COMPRAS', 'COMERCIO', 'DINERO PAGADO', 'A MEDIAS', 'REEMBOLSO', 'PRECIO FINAL']; if (section === 'Informática') return ['CLIENTE', 'TRABAJO', 'FECHA DE INICIO', 'FECHA DE FINALIZACIÓN', 'IMPORTE', 'PAGADO']; if (section === 'Nóminas') return ['EMPRESA', 'MES', 'AÑO', 'PAGADO']; return [] }
+function sectionDescription(section: Section) { return ({ Baloncesto: 'Consulta tus ingresos por mes y el total acumulado de cada temporada.', Ventas: 'Sigue las ventas, aportaciones y el beneficio generado.', Compras: 'Registra tus compras, pagos y reembolsos.', 'Informática': 'Organiza trabajos, fechas de entrega e importes.', Nóminas: 'Consulta los pagos mensuales de cada empresa.' } as Record<string, string>)[section] ?? '' }
+function tableColumns(section: Section) { if (section === 'Baloncesto') return ['MES', 'AÑO', 'TEMPORADA', 'DINERO INGRESADO']; if (section === 'Ventas') return ['VENTAS', 'COMERCIO', 'DINERO APORTADO', 'DINERO RECOGIDO', 'BENEFICIO']; if (section === 'Compras') return ['COMPRAS', 'COMERCIO', 'DINERO PAGADO', 'A MEDIAS', 'REEMBOLSO', 'PRECIO FINAL']; if (section === 'Informática') return ['CLIENTE', 'TRABAJO', 'FECHA DE INICIO', 'FECHA DE FINALIZACIÓN', 'IMPORTE', 'PAGADO']; if (section === 'Nóminas') return ['EMPRESA', 'MES', 'AÑO', 'PAGADO']; return [] }
 function renderCell(key: string, value: unknown) { if (key === 'PAGADO') { const normalized = String(value ?? '').trim().toLowerCase(); if (['sí', 'si', 'no'].includes(normalized)) return <span className={`paid-badge ${normalized === 'sí' || normalized === 'si' ? 'paid-yes' : 'paid-no'}`}><span />{normalized === 'no' ? 'Pendiente' : 'Pagado'}</span>; return value == null || value === '' ? '—' : euros(value) } if (['DINERO INGRESADO', 'DINERO GANADO', 'DINERO APORTADO', 'DINERO RECOGIDO', 'BENEFICIO', 'DINERO PAGADO', 'REEMBOLSO', 'PRECIO FINAL', 'IMPORTE'].includes(key)) return euros(value); if (key === 'A MEDIAS') return <span className="yes-no">{String(value || 'No')}</span>; return String(value ?? '—') }
 
 function RecordModal({ active, initialRecord, onClose, onSave }: { active: Exclude<Section, 'Dashboard'>; initialRecord: Row | null; onClose: () => void; onSave: (event: React.FormEvent<HTMLFormElement>) => void }) {

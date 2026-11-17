@@ -63,7 +63,7 @@ function locateTable(grid: unknown[][], expected: string[], startColumn?: number
 function tableDefinition(sheet: SheetName, body: Record<string, unknown>) {
   const text = (key: string) => String(body[key] ?? '').trim()
   const amount = (key: string) => { const value = Number(body[key] ?? 0); if (!Number.isFinite(value) || value < 0) throw new Error(`Importe no válido: ${key}`); return value }
-  if (sheet === 'BALONCESTO') return { expected: ['MES', 'AÑO', 'DINERO INGRESADO'], values: [text('MES'), amount('AÑO'), amount('DINERO INGRESADO')] }
+  if (sheet === 'BALONCESTO') return { expected: ['MES', 'AÑO', 'TEMPORADA', 'DINERO INGRESADO'], values: [text('MES'), amount('AÑO'), text('TEMPORADA'), amount('DINERO INGRESADO')] }
   if (sheet === 'NÓMINAS') return { expected: ['EMPRESA', 'MES', 'AÑO', 'PAGADO'], values: [text('EMPRESA'), text('MES'), amount('AÑO'), amount('PAGADO')] }
   if (sheet === 'VENTAS') {
     const contributed = amount('DINERO APORTADO')
@@ -96,7 +96,7 @@ export async function readAllSheets() {
   const values = response.data.valueRanges ?? []
   const rows = (index: number) => values[index]?.values ?? []
   return {
-    basketball: table(rows(0), ['MES', 'AÑO', 'DINERO INGRESADO']),
+    basketball: table(rows(0), ['MES', 'AÑO', 'TEMPORADA', 'DINERO INGRESADO']),
     sales: table(rows(1), headers.VENTAS),
     purchases: table(rows(2), headers.COMPRAS),
     it: table(rows(3), headers['INFORMÁTICA']),
