@@ -15,7 +15,7 @@ Aplicación privada de finanzas personales. Guarda baloncesto, ventas, compras, 
 pnpm install
 ```
 
-Crea `.env.local` en la raíz del proyecto con las variables de Auth.js, Google OAuth, el correo autorizado y `DATABASE_URL`. Para importar los datos actuales, añade temporalmente también `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_PRIVATE_KEY` y `GOOGLE_SHEET_ID`.
+Crea `.env.local` en la raíz del proyecto con las variables de Auth.js, Google OAuth, el correo autorizado y `DATABASE_URL`. También se aceptan `storage_database_url` y `STORAGE_DATABASE_URL` como alternativas. Para importar los datos actuales, añade temporalmente también `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_PRIVATE_KEY` y `GOOGLE_SHEET_ID`.
 
 ```bash
 pnpm dev

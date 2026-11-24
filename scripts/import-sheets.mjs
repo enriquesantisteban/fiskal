@@ -2,7 +2,8 @@ import { google } from 'googleapis'
 import { neon } from '@neondatabase/serverless'
 
 try { process.loadEnvFile('.env.local') } catch {}
-const { DATABASE_URL, GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY, GOOGLE_SHEET_ID } = process.env
+const DATABASE_URL = process.env.DATABASE_URL?.trim() || process.env.storage_database_url?.trim() || process.env.STORAGE_DATABASE_URL?.trim()
+const { GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY, GOOGLE_SHEET_ID } = process.env
 if (!DATABASE_URL) throw new Error('Falta DATABASE_URL en .env.local.')
 if (!GOOGLE_SERVICE_ACCOUNT_EMAIL || !GOOGLE_PRIVATE_KEY || !GOOGLE_SHEET_ID) throw new Error('Faltan las variables GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY o GOOGLE_SHEET_ID. Consérvalas hasta terminar la importación.')
 

@@ -1,8 +1,8 @@
 import 'server-only'
 import { neon } from '@neondatabase/serverless'
 
-const connectionString = process.env.DATABASE_URL
-if (!connectionString) throw new Error('Falta DATABASE_URL. Conecta Neon con el proyecto de Vercel y configura esta variable en local.')
+const connectionString = process.env.DATABASE_URL?.trim() || process.env.storage_database_url?.trim() || process.env.STORAGE_DATABASE_URL?.trim()
+if (!connectionString) throw new Error('Falta DATABASE_URL. Conecta Neon con el proyecto de Vercel y descarga las variables en local.')
 
 export const db = neon(connectionString)
 
