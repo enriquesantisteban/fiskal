@@ -1,11 +1,13 @@
 import { google } from 'googleapis'
 import { neon } from '@neondatabase/serverless'
+import { resolve } from 'node:path'
 
 try { process.loadEnvFile('.env.local') } catch {}
 const DATABASE_URL = process.env.DATABASE_URL?.trim() || process.env.storage_database_url?.trim() || process.env.STORAGE_DATABASE_URL?.trim()
-const { GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY, GOOGLE_SHEET_ID } = process.env
+const { GOOGLE_APPLICATION_CREDENTIALS, GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY, GOOGLE_SHEET_ID } = process.env
 if (!DATABASE_URL) throw new Error('Falta DATABASE_URL en .env.local.')
-if (!GOOGLE_SERVICE_ACCOUNT_EMAIL || !GOOGLE_PRIVATE_KEY || !GOOGLE_SHEET_ID) throw new Error('Faltan las variables GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY o GOOGLE_SHEET_ID. Consérvalas hasta terminar la importación.')
+if (!GOOGLE_SHEET_ID) throw new Error('Falta GOOGLE_SHEET_ID en .env.local.')
+if (!GOOGLE_APPLICATION_CREDENTIALS && (!GOOGLE_SERVICE_ACCOUNT_EMAIL || !GOOGLE_PRIVATE_KEY)) throw new Error('Añade GOOGLE_APPLICATION_CREDENTIALS con la ruta a un JSON de cuenta de servicio, o configura GOOGLE_SERVICE_ACCOUNT_EMAIL y GOOGLE_PRIVATE_KEY.')
 
 const sheetNames = ['BALONCESTO', 'VENTAS', 'COMPRAS', 'INFORMÁTICA', 'NÓMINAS']
 const expected = [
@@ -20,10 +22,9 @@ const normalize = (value) => String(value ?? '').normalize('NFD').replace(/[\u03
 const aliases = { BENEFICIO: ['BENEFICIO GENERADO'], 'PRECIO FINAL': ['GASTO FINAL'] }
 const matches = (value, name) => normalize(value) === normalize(name) || (aliases[name] ?? []).some((alias) => normalize(value) === normalize(alias))
 
-const auth = new google.auth.GoogleAuth({
-  credentials: { client_email: GOOGLE_SERVICE_ACCOUNT_EMAIL, private_key: GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n') },
-  scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
-})
+const auth = GOOGLE_APPLICATION_CREDENTIALS
+  ? new google.auth.GoogleAuth({ keyFile: resolve(GOOGLE_APPLICATION_CREDENTIALS), scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'] })
+  : new google.auth.GoogleAuth({ credentials: { client_email: GOOGLE_SERVICE_ACCOUNT_EMAIL, private_key: GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n') }, scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'] })
 const sheets = google.sheets({ version: 'v4', auth })
 const response = await sheets.spreadsheets.values.batchGet({ spreadsheetId: GOOGLE_SHEET_ID, ranges: sheetNames.map((name) => `'${name}'!A1:Z1000`) })
 const values = response.data.valueRanges ?? []

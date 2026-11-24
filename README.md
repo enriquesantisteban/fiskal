@@ -15,7 +15,7 @@ Aplicación privada de finanzas personales. Guarda baloncesto, ventas, compras, 
 pnpm install
 ```
 
-Crea `.env.local` en la raíz del proyecto con las variables de Auth.js, Google OAuth, el correo autorizado y `DATABASE_URL`. También se aceptan `storage_database_url` y `STORAGE_DATABASE_URL` como alternativas. Para importar los datos actuales, añade temporalmente también `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_PRIVATE_KEY` y `GOOGLE_SHEET_ID`.
+Crea `.env.local` en la raíz del proyecto con las variables de Auth.js, Google OAuth, el correo autorizado y `DATABASE_URL`. También se aceptan `storage_database_url` y `STORAGE_DATABASE_URL` como alternativas. Para importar los datos actuales, añade `GOOGLE_SHEET_ID` y las credenciales de la cuenta de servicio. Puedes usar `GOOGLE_APPLICATION_CREDENTIALS` con la ruta del JSON descargado desde Google Cloud, o las variables `GOOGLE_SERVICE_ACCOUNT_EMAIL` y `GOOGLE_PRIVATE_KEY`.
 
 ```bash
 pnpm dev
@@ -36,7 +36,7 @@ No compartas ni subas `.env.local`; contiene secretos y está excluido de Git.
 
 ## Crear las tablas e importar los datos actuales
 
-Desde la raíz del proyecto, con `DATABASE_URL` y las tres variables de Sheets en `.env.local`:
+Desde la raíz del proyecto, con `DATABASE_URL`, `GOOGLE_SHEET_ID` y las credenciales de Google en `.env.local`:
 
 ```bash
 pnpm db:migrate
@@ -64,12 +64,13 @@ GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 AUTHORIZED_EMAIL=
 DATABASE_URL=
+GOOGLE_APPLICATION_CREDENTIALS=
 GOOGLE_SERVICE_ACCOUNT_EMAIL=
 GOOGLE_PRIVATE_KEY=
 GOOGLE_SHEET_ID=
 ```
 
-Las últimas tres variables se usan únicamente en la importación inicial. En producción la aplicación necesita `DATABASE_URL` y las variables de autenticación.
+Las credenciales de Google y `GOOGLE_SHEET_ID` se usan únicamente en la importación inicial. En producción la aplicación necesita `DATABASE_URL` y las variables de autenticación.
 
 En la configuración OAuth de Google, la URI de redirección de producción es:
 
