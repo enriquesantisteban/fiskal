@@ -1,33 +1,60 @@
 # Fiskal
 
-Aplicación privada para consultar y gestionar finanzas personales almacenadas en Google Sheets. Incluye secciones de baloncesto, ventas, compras, informatica y nominas.
+Aplicación privada de finanzas personales. Guarda baloncesto, ventas, compras, informática y nóminas en PostgreSQL de Neon, conectado al proyecto de Vercel.
 
 ## Requisitos
 
-- Node.js compatible con Next.js 16 (20.9 o posterior).
+- Node.js 20.9 o posterior.
 - pnpm 12.3.4.
-- Un proyecto de Google Cloud con Google Sheets API y Google OAuth configurados.
+- Un proyecto de Neon conectado al proyecto de Vercel.
+- Las credenciales de Google Sheets solo son necesarias para importar los datos actuales una vez.
 
-## Instalacion
+## Desarrollo local
 
 ```bash
 pnpm install
 ```
 
-Crea un archivo `.env.local` en la raiz del proyecto con las variables indicadas abajo. Despues, inicia la aplicacion:
+Crea `.env.local` en la raíz del proyecto con las variables de Auth.js, Google OAuth, el correo autorizado y `DATABASE_URL`. Para importar los datos actuales, añade temporalmente también `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_PRIVATE_KEY` y `GOOGLE_SHEET_ID`.
 
 ```bash
 pnpm dev
 ```
 
-Abre [http://localhost:3000](http://localhost:3000).
+## Configuración de Vercel y Neon
 
-Para una compilacion de produccion:
+1. En Vercel, abre el proyecto `fiskal-enrique` y conecta la base `neon-fiskal-enrique` desde **Storage / Marketplace**.
+2. Comprueba que Vercel haya añadido `DATABASE_URL` a los entornos Development, Preview y Production.
+3. Conserva temporalmente las variables de Sheets en Vercel hasta completar la importación.
+4. Descarga las variables del proyecto para el entorno local con Vercel CLI. Si aún no has enlazado el repositorio local, ejecuta primero `vercel link` y elige `fiskal-enrique`.
 
 ```bash
-pnpm build
-pnpm start
+vercel env pull .env.local
 ```
+
+No compartas ni subas `.env.local`; contiene secretos y está excluido de Git.
+
+## Crear las tablas e importar los datos actuales
+
+Desde la raíz del proyecto, con `DATABASE_URL` y las tres variables de Sheets en `.env.local`:
+
+```bash
+pnpm db:migrate
+pnpm db:import-sheets
+```
+
+La importación conserva los registros de las cinco pestañas y se puede repetir sin duplicar filas ya importadas. La cuenta de servicio de Google solo necesita permiso de lectura durante la migración.
+
+Comprueba el resultado en el SQL Editor de Neon:
+
+```sql
+SELECT category, count(*)
+FROM finance_records
+GROUP BY category
+ORDER BY category;
+```
+
+Cuando hayas comprobado los datos en la aplicación y las cantidades coincidan, elimina de Vercel las variables `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_PRIVATE_KEY` y `GOOGLE_SHEET_ID`. La app ya no las necesita para funcionar. Mantén las variables de Google OAuth y `AUTHORIZED_EMAIL` para conservar el inicio de sesión privado.
 
 ## Variables de entorno
 
@@ -36,45 +63,23 @@ AUTH_SECRET=
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 AUTHORIZED_EMAIL=
+DATABASE_URL=
 GOOGLE_SERVICE_ACCOUNT_EMAIL=
 GOOGLE_PRIVATE_KEY=
 GOOGLE_SHEET_ID=
 ```
 
-- `AUTH_SECRET`: secreto de Auth.js.
-- `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET`: credenciales del cliente OAuth de Google.
-- `AUTHORIZED_EMAIL`: correo verificado autorizado para iniciar sesion.
-- `GOOGLE_SERVICE_ACCOUNT_EMAIL` y `GOOGLE_PRIVATE_KEY`: credenciales de una cuenta de servicio con acceso a la hoja. Si la clave se guarda en una sola linea, representa los saltos de linea como `\n`.
-- `GOOGLE_SHEET_ID`: identificador de la hoja de calculo, incluido en su URL.
+Las últimas tres variables se usan únicamente en la importación inicial. En producción la aplicación necesita `DATABASE_URL` y las variables de autenticación.
 
-En la configuracion OAuth de Google, anade como URI de redireccion:
+En la configuración OAuth de Google, la URI de redirección de producción es:
 
 ```text
-http://localhost:3000/api/auth/callback/google
+https://fiskal-enrique.vercel.app/api/auth/callback/google
 ```
 
-Anade tambien la URI correspondiente al dominio de produccion. Comparte la hoja con `GOOGLE_SERVICE_ACCOUNT_EMAIL` y dale permiso de editor para permitir cambios.
-
-No subas `.env.local` ni compartas sus valores; contienen credenciales privadas.
-
-## Hojas de calculo
-
-La aplicacion busca estas pestañas por nombre. Los encabezados se pueden detectar aunque la tabla no empiece en la primera fila o columna.
-
-| Pestaña | Columnas |
-| --- | --- |
-| `BALONCESTO` | `MES`, `AÑO`, `TEMPORADA`, `DINERO INGRESADO` |
-| `VENTAS` | `VENTAS`, `COMERCIO`, `DINERO APORTADO`, `DINERO RECOGIDO`, `BENEFICIO` |
-| `COMPRAS` | `COMPRAS`, `COMERCIO`, `DINERO PAGADO`, `A MEDIAS`, `REEMBOLSO`, `PRECIO FINAL` |
-| `INFORMÁTICA` | `CLIENTE`, `TRABAJO`, `FECHA DE INICIO`, `FECHA DE FINALIZACIÓN`, `IMPORTE`, `PAGADO` |
-| `NÓMINAS` | `EMPRESA`, `MES`, `AÑO`, `PAGADO` |
-
-Para agregar, editar o eliminar registros, mantén los encabezados de cada tabla contiguos y en el orden indicado. `TEMPORADA` es opcional para leer registros antiguos de baloncesto; los nuevos registros la calculan usando temporadas de septiembre a junio. La fecha de finalizacion en Informatica es opcional.
-
-Los encabezados `BENEFICIO GENERADO` y `GASTO FINAL` tambien se reconocen como equivalentes a `BENEFICIO` y `PRECIO FINAL`, respectivamente.
-
-## Comprobacion de tipos
+Para una compilación de producción:
 
 ```bash
-pnpm exec tsc --noEmit
+pnpm build
+pnpm start
 ```
