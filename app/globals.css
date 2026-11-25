@@ -237,4 +237,8 @@
 
 @media (max-width: 720px) { .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }.kpi-total, .kpi-payroll { grid-column: 1 / -1; } }
 
-.chart-filter-label { display: inline-flex; }.chart-filter { min-width: 142px; padding: 0 9px; background: #fffefa; cursor: pointer; }.commerce-chart-toggle { gap: 7px; height: 33px; font-size: 10px; }.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+.commerce-chart-toggle { gap: 7px; height: 33px; font-size: 10px; }
+
+/* Refined commerce charts and responsive drawer gestures */
+.commerce-chart-panel { padding: 20px 22px 16px; border-color: #e8ece6; box-shadow: 0 8px 24px #263d2f08; }.commerce-chart { height: 205px; }.commerce-chart-toggle { border-color: #e2e9e1; background: #f8faf7; color: #4f6d55; }.commerce-chart-toggle:hover { background: #eef4ed; border-color: #cbd9c9; }.chart-empty { margin: 8px 0 0; padding: 28px 10px; border-radius: 10px; background: #f7f8f4; }
+@media (max-width: 720px) { .commerce-chart-panel { padding: 15px 13px 12px; }.commerce-chart { height: 190px; }.commerce-chart-toggle { height: 32px; padding: 0 10px; font-size: 9px; }.app-shell { touch-action: pan-y; }.sidebar { transition: transform .32s cubic-bezier(.22,.75,.25,1); will-change: transform; }.mobile-backdrop { opacity: 0; transition: opacity .24s ease; }.sidebar-open ~ .mobile-backdrop { opacity: 1; } }

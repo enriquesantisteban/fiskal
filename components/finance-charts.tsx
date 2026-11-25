@@ -62,12 +62,11 @@ export function TopCommerceChart({ title, rows, valueKey, valueLabel }: { title:
   return <section className="panel commerce-chart-panel" aria-label={title}>
     <div className="panel-heading"><div><span className="panel-kicker">TOP 5 · {valueLabel}</span><h2>{title}</h2></div><button className="button-outline commerce-chart-toggle" aria-expanded={open} onClick={() => setOpen((current) => !current)}>{open ? 'Ocultar gráfica' : 'Ver gráfica'}{open ? <ChevronUp size={15} /> : <ChevronDown size={15} />}</button></div>
     {open && (chartData.length ? <ChartContainer config={chartConfig} className="commerce-chart">
-      <BarChart data={chartData} layout="vertical" accessibilityLayer margin={{ top: 5, right: 18, left: 4, bottom: 5 }}>
-        <CartesianGrid horizontal={false} strokeDasharray="3 4" />
-        <XAxis type="number" axisLine={false} tickLine={false} tickFormatter={(value) => `${Number(value).toLocaleString('es-ES')} €`} />
-        <YAxis type="category" dataKey="name" width={115} axisLine={false} tickLine={false} tick={{ fontSize: 10 }} />
+      <BarChart data={chartData} layout="vertical" accessibilityLayer margin={{ top: 4, right: 20, left: 2, bottom: 4 }}>
+        <XAxis type="number" axisLine={false} tickLine={false} tick={false} />
+        <YAxis type="category" dataKey="name" width={132} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#657267' }} />
         <Tooltip content={<ChartTooltipContent labelKey="name" formatter={(value) => euros(value)} />} />
-        <Bar dataKey="amount" fill="var(--color-amount)" radius={[0, 5, 5, 0]} maxBarSize={24} />
+        <Bar dataKey="amount" fill="var(--color-amount)" radius={[0, 8, 8, 0]} maxBarSize={18} activeBar={{ fill: '#77977b' }} />
       </BarChart>
     </ChartContainer> : <p className="chart-empty">Aún no hay importes para comparar.</p>)}
   </section>
