@@ -7,8 +7,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "db:migrate": "node scripts/db-migrate.mjs",
-    "db:import-sheets": "node scripts/import-sheets.mjs"
+    "db:migrate": "node scripts/db-migrate.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",

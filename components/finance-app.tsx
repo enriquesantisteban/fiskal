@@ -30,6 +30,7 @@ const parseAmount = (value: unknown) => {
 const euros = (value: unknown) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 }).format(parseAmount(value))
 const numericTotal = (rows: Row[] | undefined, key: string) => (rows ?? []).reduce((sum, row) => sum + parseAmount(row[key]), 0)
 const amountPaid = (row: Row) => {
+  if (row.PAGADO !== undefined) return parseAmount(row.PAGADO)
   const status = String(row.PAGADO ?? '').trim().toLocaleLowerCase('es')
   if (['sí', 'si'].includes(status)) return parseAmount(row.IMPORTE)
   if (status === 'no') return 0
@@ -45,13 +46,14 @@ const monthNumber = (value: unknown) => {
 }
 const yearNumber = (value: unknown) => Number(String(value ?? '').match(/\d{4}/)?.[0] ?? parseAmount(value))
 const rowDateValue = (row: Row, section: Section) => {
+  if (row['FECHA DE REGISTRO']) return Date.parse(String(row['FECHA DE REGISTRO'])) || 0
   if (section === 'Informática') return Date.parse(String(row['FECHA DE INICIO'] ?? '')) || Number(row._rowNumber ?? 0)
   if (section === 'Baloncesto' || section === 'Nóminas') {
     const month = monthNumber(row.MES)
     const year = yearNumber(row['AÑO'])
     return month > 0 && year > 0 ? Date.UTC(year, month - 1, 1) : Number(row._rowNumber ?? 0)
   }
-  // Ventas y compras no guardan fecha; la fila más reciente corresponde al último registro añadido.
+  // Las tablas de ventas y compras conservan la fecha de creación del registro.
   return Number(row._rowNumber ?? 0)
 }
 const sortRowsByDateDesc = (rows: Row[], section: Section) => [...rows].sort((left, right) => rowDateValue(right, section) - rowDateValue(left, section))
@@ -67,11 +69,11 @@ const currentSeason = (date = new Date()) => {
   return date.getMonth() + 1 >= 9 ? `${year}/${year + 1}` : `${year - 1}/${year}`
 }
 const fields: Record<Exclude<Section, 'Dashboard'>, { key: string; label: string; type?: string; options?: string[] }[]> = {
-  Baloncesto: [{ key: 'MES', label: 'Mes', type: 'select', options: monthOptions }, { key: 'AÑO', label: 'Año', type: 'number' }, { key: 'DINERO INGRESADO', label: 'Dinero ingresado', type: 'number' }],
+  Baloncesto: [{ key: 'MES', label: 'Mes', type: 'select', options: monthOptions }, { key: 'AÑO', label: 'Año' }, { key: 'DINERO INGRESADO', label: 'Dinero ingresado', type: 'number' }],
   Ventas: [{ key: 'VENTAS', label: 'Venta' }, { key: 'COMERCIO', label: 'Comercio' }, { key: 'DINERO APORTADO', label: 'Dinero aportado', type: 'number' }, { key: 'DINERO RECOGIDO', label: 'Dinero recogido', type: 'number' }],
   Compras: [{ key: 'COMPRAS', label: 'Compra' }, { key: 'COMERCIO', label: 'Comercio' }, { key: 'DINERO PAGADO', label: 'Dinero pagado', type: 'number' }, { key: 'A MEDIAS', label: '¿A medias?', type: 'select', options: ['No', 'Sí'] }, { key: 'REEMBOLSO', label: 'Reembolso', type: 'number' }],
-  'Informática': [{ key: 'CLIENTE', label: 'Cliente' }, { key: 'TRABAJO', label: 'Trabajo' }, { key: 'FECHA DE INICIO', label: 'Fecha de inicio', type: 'date' }, { key: 'FECHA DE FINALIZACIÓN', label: 'Fecha de finalización (opcional)', type: 'date' }, { key: 'IMPORTE', label: 'Importe', type: 'number' }, { key: 'PAGADO', label: '¿Cuánto te han pagado?', type: 'select', options: ['Sí', 'No', 'Cantidad específica'] }],
-  Nóminas: [{ key: 'EMPRESA', label: 'Empresa' }, { key: 'MES', label: 'Mes', type: 'select', options: monthOptions }, { key: 'AÑO', label: 'Año', type: 'number' }, { key: 'PAGADO', label: 'Importe pagado', type: 'number' }],
+  'Informática': [{ key: 'CLIENTE', label: 'Cliente' }, { key: 'TRABAJO', label: 'Trabajo' }, { key: 'FECHA DE INICIO', label: 'Fecha de inicio', type: 'date' }, { key: 'FECHA DE FINALIZACIÓN', label: 'Fecha de finalización (opcional)', type: 'date' }, { key: 'IMPORTE', label: 'Importe', type: 'number' }, { key: 'PAGADO', label: 'Pagado', type: 'number' }],
+  Nóminas: [{ key: 'EMPRESA', label: 'Empresa' }, { key: 'MES', label: 'Mes', type: 'select', options: monthOptions }, { key: 'AÑO', label: 'Año' }, { key: 'PAGADO', label: 'Importe pagado', type: 'number' }],
 }
 
 export function FinanceApp({ user }: { user: { name?: string | null; email?: string | null; image?: string | null } }) {
@@ -261,16 +263,14 @@ function MobileRecordCard({ section, columns, row, onEdit, onDelete, canManage }
 function Kpi({ title, value, icon: Icon, tone, foot }: { title: string; value: string; icon: typeof ArrowUpRight; tone: string; foot: string }) { return <article className="kpi-card"><div className="kpi-top"><span>{title}</span><span className={`kpi-icon ${tone}`}><Icon size={17} /></span></div><strong className="kpi-value">{value}</strong><div className="kpi-foot"><span className="kpi-dash" />{foot}</div></article> }
 function SplitCard({ title, value, foot, tone }: { title: string; value: string; foot: string; tone?: string }) { return <div className={`split-card ${tone ?? ''}`}><span>{title}</span><strong>{value}</strong><small>{foot}</small></div> }
 function sectionDescription(section: Section) { return ({ Baloncesto: 'Consulta tus ingresos por mes y el total acumulado de cada temporada.', Ventas: 'Sigue las ventas, aportaciones y el beneficio generado.', Compras: 'Registra tus compras, pagos y reembolsos.', 'Informática': 'Organiza trabajos, fechas de entrega e importes.', Nóminas: 'Consulta los pagos mensuales de cada empresa.' } as Record<string, string>)[section] ?? '' }
-function tableColumns(section: Section) { if (section === 'Baloncesto') return ['MES', 'AÑO', 'TEMPORADA', 'DINERO INGRESADO']; if (section === 'Ventas') return ['VENTAS', 'COMERCIO', 'DINERO APORTADO', 'DINERO RECOGIDO', 'BENEFICIO']; if (section === 'Compras') return ['COMPRAS', 'COMERCIO', 'DINERO PAGADO', 'A MEDIAS', 'REEMBOLSO', 'PRECIO FINAL']; if (section === 'Informática') return ['CLIENTE', 'TRABAJO', 'FECHA DE INICIO', 'FECHA DE FINALIZACIÓN', 'IMPORTE', 'PAGADO']; if (section === 'Nóminas') return ['EMPRESA', 'MES', 'AÑO', 'PAGADO']; return [] }
-function renderCell(key: string, value: unknown) { if (key === 'PAGADO') { const normalized = String(value ?? '').trim().toLowerCase(); if (['sí', 'si', 'no'].includes(normalized)) return <span className={`paid-badge ${normalized === 'sí' || normalized === 'si' ? 'paid-yes' : 'paid-no'}`}><span />{normalized === 'no' ? 'Pendiente' : 'Pagado'}</span>; return value == null || value === '' ? '—' : euros(value) } if (key === 'FECHA DE FINALIZACIÓN' && String(value ?? '').trim() === '') return '—'; if (['DINERO INGRESADO', 'DINERO GANADO', 'DINERO APORTADO', 'DINERO RECOGIDO', 'BENEFICIO', 'DINERO PAGADO', 'REEMBOLSO', 'PRECIO FINAL', 'IMPORTE'].includes(key)) return euros(value); if (key === 'A MEDIAS') return <span className="yes-no">{String(value || 'No')}</span>; return String(value ?? '—') }
+function tableColumns(section: Section) { if (section === 'Baloncesto') return ['MES', 'AÑO', 'TEMPORADA', 'DINERO INGRESADO']; if (section === 'Ventas') return ['VENTAS', 'COMERCIO', 'DINERO APORTADO', 'DINERO RECOGIDO', 'BENEFICIO', 'FECHA DE REGISTRO']; if (section === 'Compras') return ['COMPRAS', 'COMERCIO', 'DINERO PAGADO', 'A MEDIAS', 'REEMBOLSO', 'PRECIO FINAL', 'FECHA DE REGISTRO']; if (section === 'Informática') return ['CLIENTE', 'TRABAJO', 'FECHA DE INICIO', 'FECHA DE FINALIZACIÓN', 'IMPORTE', 'PAGADO', 'FECHA DE REGISTRO']; if (section === 'Nóminas') return ['EMPRESA', 'MES', 'AÑO', 'PAGADO']; return [] }
+function renderCell(key: string, value: unknown) { if (key === 'PAGADO') { const normalized = String(value ?? '').trim().toLowerCase(); if (['sí', 'si', 'no'].includes(normalized)) return <span className={`paid-badge ${normalized === 'sí' || normalized === 'si' ? 'paid-yes' : 'paid-no'}`}><span />{normalized === 'no' ? 'Pendiente' : 'Pagado'}</span>; return value == null || value === '' ? '—' : euros(value) } if (key === 'FECHA DE FINALIZACIÓN' && String(value ?? '').trim() === '') return '—'; if (key === 'FECHA DE REGISTRO' && value) return new Intl.DateTimeFormat('es-ES', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(String(value))); if (['DINERO INGRESADO', 'DINERO GANADO', 'DINERO APORTADO', 'DINERO RECOGIDO', 'BENEFICIO', 'DINERO PAGADO', 'REEMBOLSO', 'PRECIO FINAL', 'IMPORTE', 'IMPORTE PAGADO'].includes(key)) return euros(value); if (key === 'A MEDIAS') return <span className="yes-no">{value ? 'Sí' : 'No'}</span>; return String(value ?? '—') }
 
 function RecordModal({ active, initialRecord, onClose, onSave }: { active: Exclude<Section, 'Dashboard'>; initialRecord: Row | null; onClose: () => void; onSave: (event: React.FormEvent<HTMLFormElement>) => void }) {
   const inputs = fields[active]
   const editing = Boolean(initialRecord)
-  const initialPayment = String(initialRecord?.PAGADO ?? '').trim()
-  const normalizedPayment = initialPayment.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es')
-  const [paymentOption, setPaymentOption] = useState(normalizedPayment === 'si' ? 'Sí' : normalizedPayment === 'no' || !initialPayment ? 'No' : 'Cantidad específica')
   const initialValue = (key: string, type?: string) => {
+    if (key === 'A MEDIAS') return initialRecord?.[key] ? 'Sí' : 'No'
     const text = String(initialRecord?.[key] ?? '')
     if (type !== 'date' || !text) return text
     if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text
@@ -279,7 +279,6 @@ function RecordModal({ active, initialRecord, onClose, onSave }: { active: Exclu
     return ''
   }
   return <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}><section className="record-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><header className="modal-head"><div><span className="panel-kicker">{active.toUpperCase()}</span><h2 id="modal-title">{editing ? 'Modificar registro' : 'Nuevo registro'}</h2><p>{editing ? 'Actualiza los datos de este registro.' : 'Se guardará directamente en la base de datos.'}</p></div><button className="icon-button" aria-label="Cerrar" onClick={onClose}><X size={19} /></button></header><form onSubmit={onSave}><div className="modal-fields">{inputs.map((field) => {
-    if (active === 'Informática' && field.key === 'PAGADO') return <div className="conditional-field-pair" key={field.key}><label>{field.label}<select name="PAGADO" required value={paymentOption} onChange={(event) => setPaymentOption(event.target.value)}>{field.options?.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>{paymentOption === 'Cantidad específica' && <label>Cantidad recibida (€)<input name="IMPORTE PAGADO" type="number" min={0} step="0.01" defaultValue={initialRecord ? String(initialRecord.PAGADO ?? '') : ''} required /></label>}</div>
     if (field.type === 'select') return <label key={field.key}>{field.label}<select name={field.key} required defaultValue={initialValue(field.key, field.type)}>{field.options?.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
     return <label key={field.key}>{field.label}<input name={field.key} type={field.type ?? 'text'} min={field.type === 'number' ? 0 : undefined} step={field.type === 'number' ? '0.01' : undefined} defaultValue={initialValue(field.key, field.type)} required={field.key !== 'FECHA DE FINALIZACIÓN'} /></label>
   })}</div><div className="modal-actions"><button type="button" className="button-outline" onClick={onClose}>Cancelar</button><button type="submit" className="button-primary"><Check size={16} /> {editing ? 'Guardar cambios' : 'Guardar registro'}</button></div></form></section></div>

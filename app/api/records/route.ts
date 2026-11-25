@@ -18,8 +18,8 @@ function normalizeRecord(category: Category, body: FinanceRecord): FinanceRecord
     if (!Number.isFinite(value) || value < 0) throw new Error(`Importe no válido: ${key}`)
     return value
   }
-  if (category === 'basketball') return { MES: text('MES'), AÑO: amount('AÑO'), TEMPORADA: text('TEMPORADA'), 'DINERO INGRESADO': amount('DINERO INGRESADO') }
-  if (category === 'payroll') return { EMPRESA: text('EMPRESA'), MES: text('MES'), AÑO: amount('AÑO'), PAGADO: amount('PAGADO') }
+  if (category === 'basketball') return { MES: text('MES'), AÑO: text('AÑO'), TEMPORADA: text('TEMPORADA'), 'DINERO INGRESADO': amount('DINERO INGRESADO') }
+  if (category === 'payroll') return { EMPRESA: text('EMPRESA'), MES: text('MES'), AÑO: text('AÑO'), PAGADO: amount('PAGADO') }
   if (category === 'sales') {
     const contributed = amount('DINERO APORTADO')
     const collected = amount('DINERO RECOGIDO')
@@ -28,17 +28,17 @@ function normalizeRecord(category: Category, body: FinanceRecord): FinanceRecord
   if (category === 'purchases') {
     const paid = amount('DINERO PAGADO')
     const refund = amount('REEMBOLSO')
-    return { COMPRAS: text('COMPRAS'), COMERCIO: text('COMERCIO'), 'DINERO PAGADO': paid, 'A MEDIAS': text('A MEDIAS'), REEMBOLSO: refund, 'PRECIO FINAL': paid - refund }
+    const split = body['A MEDIAS'] === true || ['true', 'sí', 'si'].includes(text('A MEDIAS').toLowerCase())
+    return { COMPRAS: text('COMPRAS'), COMERCIO: text('COMERCIO'), 'DINERO PAGADO': paid, 'A MEDIAS': split, REEMBOLSO: refund, 'PRECIO FINAL': paid - refund }
   }
-  const projectAmount = amount('IMPORTE')
-  const paymentChoice = text('PAGADO')
-  const paid = paymentChoice === 'Cantidad específica' ? amount('IMPORTE PAGADO') : paymentChoice === 'Sí' ? projectAmount : paymentChoice === 'No' ? 0 : Number(paymentChoice)
-  if (!Number.isFinite(paid) || paid < 0 || paid > projectAmount) throw new Error('El importe pagado debe estar entre 0 y el importe total del trabajo.')
-  return {
-    CLIENTE: text('CLIENTE'), TRABAJO: text('TRABAJO'), 'FECHA DE INICIO': text('FECHA DE INICIO'),
-    'FECHA DE FINALIZACIÓN': text('FECHA DE FINALIZACIÓN'), IMPORTE: projectAmount,
-    PAGADO: paymentChoice === 'Sí' ? 'Sí' : paymentChoice === 'No' ? 'No' : paid,
-  }
+  const total = amount('IMPORTE')
+  const paid = amount('PAGADO')
+  if (paid > total) throw new Error('El importe pagado no puede superar el importe total.')
+  const start = text('FECHA DE INICIO')
+  const end = text('FECHA DE FINALIZACIÓN')
+  if (start && !/^\d{4}-\d{2}-\d{2}$/.test(start)) throw new Error('La fecha de inicio no es válida.')
+  if (end && !/^\d{4}-\d{2}-\d{2}$/.test(end)) throw new Error('La fecha de finalización no es válida.')
+  return { CLIENTE: text('CLIENTE'), TRABAJO: text('TRABAJO'), 'FECHA DE INICIO': start, 'FECHA DE FINALIZACIÓN': end, IMPORTE: total, PAGADO: paid }
 }
 
 export async function GET() {

@@ -6,6 +6,6 @@ const databaseUrl = process.env.DATABASE_URL?.trim() || process.env.storage_data
 if (!databaseUrl) throw new Error('Falta DATABASE_URL. Descarga las variables de Vercel en .env.local primero.')
 
 const sql = neon(databaseUrl)
-const migration = await readFile(new URL('../db/migrations/0001_finance_records.sql', import.meta.url), 'utf8')
+const migration = await readFile(new URL('../db/migrations/0001_finance_tables.sql', import.meta.url), 'utf8')
 for (const statement of migration.split(';').map((part) => part.trim()).filter(Boolean)) await sql.query(statement)
 console.log('Esquema de Fiskal creado correctamente.')
