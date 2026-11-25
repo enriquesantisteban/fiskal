@@ -2,10 +2,11 @@
 
 import { useMemo, useRef, useState } from 'react'
 import type { ComponentType } from 'react'
+import { useRouter } from 'next/navigation'
 import useSWR, { mutate } from 'swr'
 import { signOut } from 'next-auth/react'
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import { ArrowDownLeft, ArrowUpRight, Banknote, BarChart3, CalendarDays, Check, ChevronDown, CircleDollarSign, Computer, Database, Filter, LayoutDashboard, LogOut, Menu, Pencil, Plus, Search, Share2, ShoppingBag, Trash2, Wallet, X } from 'lucide-react'
+import { ArrowDownLeft, ArrowUpRight, Banknote, BarChart3, CalendarDays, Check, ChevronDown, CircleDollarSign, Computer, Database, Filter, LayoutDashboard, LogOut, Menu, Pencil, Plus, RefreshCw, Search, Share2, ShoppingBag, Trash2, Wallet, X } from 'lucide-react'
 
 type Row = Record<string, unknown> & { _id?: string; _rowNumber?: number }
 type Data = { basketball: Row[]; sales: Row[]; purchases: Row[]; it: Row[]; payroll: Row[]; warnings?: string[] }
@@ -89,6 +90,7 @@ const fields: Record<Exclude<Section, 'Dashboard'>, { key: string; label: string
 }
 
 export function FinanceApp({ user }: { user: { name?: string | null; email?: string | null; image?: string | null } }) {
+  const router = useRouter()
   const [active, setActive] = useState<Section>('Dashboard')
   const [modal, setModal] = useState(false)
   const [showCategoryChooser, setShowCategoryChooser] = useState(false)
@@ -175,7 +177,7 @@ export function FinanceApp({ user }: { user: { name?: string | null; email?: str
     </aside>
     {mobileNav && <button className="mobile-backdrop" aria-label="Cerrar navegación" onClick={() => setMobileNav(false)} />}
     <section className="main-panel">
-      <header className="topbar"><div className="topbar-left"><button className="mobile-menu icon-button" aria-label="Abrir navegación" onClick={() => setMobileNav(true)}><Menu size={19} /></button><span>Mis finanzas</span><span className="crumb-slash">/</span><strong>{active}</strong></div><div className="topbar-right"><span className="today"><CalendarDays size={15} /> {new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date())}</span><div className="top-avatar">{user.image ? <img src={user.image} alt="" /> : user.name?.[0] ?? 'U'}</div></div></header>
+      <header className="topbar"><div className="topbar-left"><button className="mobile-menu icon-button" aria-label="Abrir navegación" onClick={() => setMobileNav(true)}><Menu size={19} /></button><span>Mis finanzas</span><span className="crumb-slash">/</span><strong>{active}</strong></div><div className="topbar-right"><span className="today"><CalendarDays size={15} /> {new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date())}</span><button className="topbar-refresh" type="button" aria-label="Recargar datos y página" title="Recargar" onClick={() => { void mutate('/api/records'); router.refresh() }}><RefreshCw size={16} /></button><div className="top-avatar">{user.image ? <img src={user.image} alt="" /> : user.name?.[0] ?? 'U'}</div></div></header>
       <div className="content">
         {error && <div className="error-banner"><span>No se pudo conectar con la base de datos. Comprueba la configuración de Neon en Vercel.</span><button className="icon-button" aria-label="Cerrar aviso" onClick={() => mutate('/api/records')}><X size={16} /></button></div>}
         {data?.warnings?.map((warning) => <div className="error-banner" role="alert" key={warning}><span>{warning}</span></div>)}
