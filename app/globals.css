@@ -139,6 +139,75 @@
   .season-income-total { font-size: 14px; }
   .season-months { grid-template-columns: 1fr; padding: 0 9px 9px; }
 }
+
+/* Match the compact expandable expense rows across every ledger. */
+.record-collection { max-width: 900px; margin: 0 auto 22px; padding: 15px; border: 1px solid #e2e6df; border-radius: 17px; background: #fbfcf9; box-shadow: 0 5px 20px #243b2c0a; }
+.record-collection-head { align-items: center; margin-bottom: 9px; }
+.record-collection-head > div:first-child { display: none; }
+.record-search-tools { display: flex; width: 100%; align-items: center; gap: 8px; }
+.record-search-tools .searchbox { flex: 1; min-width: 0; height: 44px; border: 1px solid #dfe4dc; border-radius: 12px; background: #fff; }
+.record-search-tools .searchbox input { font-size: 12px; }
+.record-tool-button { display: grid; width: 44px; height: 44px; flex: 0 0 auto; place-items: center; border: 1px solid #dfe4dc; border-radius: 11px; background: #fff; color: #56665a; cursor: pointer; }
+.record-tool-button:hover, .record-tool-active { border-color: #c9d7c5; background: #edf3eb; color: #4e7154; }
+.record-filter-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, .85fr) 44px; gap: 8px; margin: 0 0 11px; }
+.record-filter-row select { min-width: 0; height: 42px; padding: 0 11px; border: 1px solid #dfe4dc; border-radius: 11px; outline: none; background: #fff; color: #4e5f52; font-size: 11px; }
+.record-card-list { display: grid; gap: 8px; }
+.record-list-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 2px 1px; color: #889287; font-size: 9px; }
+.record-list-footer strong { display: flex; align-items: center; gap: 6px; color: #748174; font-weight: 500; }
+.record-list-footer b { color: #34483a; font-size: 11px; font-weight: 700; }
+.finance-record-card { min-height: 0; padding: 0; border: 1px solid #dce2da; border-radius: 13px; background: #fff; box-shadow: none; }
+.finance-record-card:hover { transform: none; border-color: #cbd6c9; box-shadow: 0 2px 8px #243b2c0a; }
+.finance-card-summary { display: grid; width: 100%; min-height: 60px; grid-template-columns: 32px minmax(0, 1fr) auto 18px; align-items: center; gap: 10px; padding: 8px 12px; border: 0; border-radius: inherit; background: transparent; color: inherit; text-align: left; cursor: pointer; }
+.finance-card-icon { width: 32px; height: 32px; border-radius: 10px; }
+.finance-card-title { gap: 2px; }
+.finance-card-title strong { font-size: 12px; font-weight: 650; }
+.finance-card-title small { font-size: 10px; }
+.finance-card-amount { display: block; margin: 0; padding: 0; color: #35483a; font-size: 12px; font-weight: 650; letter-spacing: 0; white-space: nowrap; }
+.finance-card-chevron { color: #6d796e; transition: transform .18s; }
+.finance-record-expanded .finance-card-chevron { transform: rotate(180deg); }
+.finance-card-expanded { padding: 0 12px 10px 54px; }
+.finance-card-details { grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 8px 12px; margin: 0; padding: 8px 0; border-top: 1px solid #edf0eb; }
+.finance-card-detail > span { font-size: 8px; letter-spacing: .3px; }
+.finance-card-detail > strong { color: #405145; font-size: 10px; }
+.finance-card-footer { align-items: center; flex-wrap: wrap; padding-top: 8px; font-size: 9px; }
+.finance-card-actions { display: flex; align-items: center; gap: 6px; }
+.finance-card-footer .finance-card-actions button { min-height: 29px; padding: 0 8px; border: 1px solid #e4e9e2; background: #fff; color: #536b57; }
+.finance-card-footer .finance-card-actions button:last-child { border-color: #f0ded9; background: #fff8f6; color: #a36355; }
+.basketball-income-section { max-width: 900px; margin: 0 auto 22px; padding: 15px; border: 1px solid #e2e6df; border-radius: 17px; background: #fbfcf9; box-shadow: 0 5px 20px #243b2c0a; }
+.basketball-section-heading { align-items: center; }
+.basketball-add-button { display: inline-flex; align-items: center; gap: 6px; height: 40px; border-radius: 10px; }
+.basketball-record-tools { margin: 0 0 9px; }
+.basketball-result-count { color: #829084; font-size: 10px; }
+.season-card-grid { grid-template-columns: 1fr; gap: 8px; }
+.season-income-card { border-color: #dce2da; border-radius: 13px; box-shadow: none; }
+.season-income-button { min-height: 60px; padding: 8px 12px; }
+.season-income-icon { width: 32px; height: 32px; border-radius: 10px; }
+.season-income-copy { flex: 1; flex-direction: row; align-items: center; gap: 9px; }
+.season-income-copy small { display: none; }
+.season-income-copy strong { font-size: 12px; }
+.season-income-copy em { font-size: 9px; }
+.season-income-total { font-size: 12px; }
+.season-months { grid-template-columns: 1fr; padding: 0 8px 8px; }
+.month-income-card { border-radius: 10px; }
+.month-income-button { min-height: 48px; }
+.month-income-date > span { font-size: 11px; }
+.record-empty { border-color: #dfe4dc; background: #fff; }
+@media (max-width: 720px) {
+  .record-collection, .basketball-income-section { width: 100%; padding: 10px; border-radius: 14px; }
+  .record-collection-head, .basketball-section-heading { align-items: stretch; }
+  .record-filter-row { grid-template-columns: minmax(0, 1fr) minmax(0, .85fr) 42px; gap: 6px; }
+  .record-filter-row select { height: 40px; padding: 0 7px; font-size: 10px; }
+  .record-tool-button { width: 42px; height: 42px; }
+  .finance-card-summary { min-height: 58px; grid-template-columns: 30px minmax(0, 1fr) auto 16px; gap: 8px; padding: 7px 9px; }
+  .finance-card-icon { width: 30px; height: 30px; }
+  .finance-card-amount { font-size: 11px; }
+  .finance-card-expanded { padding-left: 47px; padding-right: 9px; }
+  .finance-card-footer { gap: 7px; }
+  .record-list-footer { align-items: flex-start; flex-direction: column; gap: 5px; padding: 9px 2px 1px; }
+  .basketball-section-heading h2 { font-size: 16px; }
+  .basketball-add-button { justify-content: center; width: 100%; }
+  .season-income-copy { flex-direction: column; align-items: flex-start; gap: 2px; }
+}
 .kpi-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .split-stats { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
 .analytics-panel, .commerce-chart-panel { padding: 18px 19px 16px; }
