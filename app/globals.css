@@ -250,7 +250,7 @@
 :root { --brand-dark: #283a31; --brand-lime: #d7e985; --brand-lime-hover: #e2f39b; --brand-lime-soft: #eff4d8; }
 .button-primary { color: var(--brand-dark); background: var(--brand-lime); border-color: var(--brand-lime); box-shadow: 0 2px 5px #283a3118; }
 .button-primary:hover { color: var(--brand-dark); background: var(--brand-lime-hover); border-color: var(--brand-lime-hover); }
-.sidebar-brand .brand-mark { color: var(--brand-dark); background: var(--brand-lime); }
+.sidebar-brand .brand-mark { color: var(--brand-dark); background: transparent; }
 .nav-active { color: var(--brand-dark); background: var(--brand-lime-soft); }
 .nav-active > svg { color: var(--brand-dark); }.nav-indicator { background: var(--brand-dark); }
 .small-eyebrow { color: #586c5c; }
