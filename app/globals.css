@@ -150,6 +150,7 @@
 .record-tool-button { display: grid; width: 44px; height: 44px; flex: 0 0 auto; place-items: center; border: 1px solid #dfe4dc; border-radius: 11px; background: #fff; color: #56665a; cursor: pointer; }
 .record-tool-button:hover, .record-tool-active { border-color: #c9d7c5; background: #edf3eb; color: #4e7154; }
 .record-filter-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, .85fr) 44px; gap: 8px; margin: 0 0 11px; }
+.record-filter-row.basketball-filter-row { grid-template-columns: minmax(0, 1fr) 44px; }
 .record-filter-row select { min-width: 0; height: 42px; padding: 0 11px; border: 1px solid #dfe4dc; border-radius: 11px; outline: none; background: #fff; color: #4e5f52; font-size: 11px; }
 .record-card-list { display: grid; gap: 8px; }
 .record-list-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 2px 1px; color: #889287; font-size: 9px; }
