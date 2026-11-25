@@ -259,3 +259,4 @@
 .kpi-dash { background: #899b52; }
 .chart-legend i { background: var(--brand-dark); }
 .commerce-ranking-track i { background: linear-gradient(90deg, var(--brand-lime), var(--brand-dark)); }
+.login-top .brand-mark { width: 34px; height: 34px; overflow: hidden; border-radius: 0; background: transparent; }
