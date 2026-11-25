@@ -62,6 +62,83 @@
 @media (max-width: 720px) { .table-toolbar { align-items: flex-start; flex-direction: column; }.table-controls { width: 100%; justify-content: space-between; flex-wrap: wrap; }.searchbox { min-width: 100%; }.table-actions { width: 100%; }.table-actions .button-outline { flex: 1; justify-content: center; }.category-grid { grid-template-columns: 1fr; } }
 .season-filter { display: flex; align-items: center; gap: 7px; color: #81867c; font-size: 9px; white-space: nowrap; }.season-filter select { height: 33px; max-width: 150px; padding: 0 9px; border: 1px solid #e8e7df; border-radius: 6px; outline: none; background: #fffefa; color: #576258; font-size: 9px; }.season-filter select:focus { border-color: #849b7e; box-shadow: 0 0 0 3px #72916e1a; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }
+
+/* Shared responsive finance cards */
+.legacy-record-panel { display: none !important; }
+.record-collection, .basketball-income-section { margin: 0 0 20px; }
+.record-collection-head, .basketball-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin: 0 0 13px; }
+.record-collection-head h2, .basketball-section-heading h2 { margin: 4px 0 0; color: #344238; font-size: 17px; font-weight: 600; letter-spacing: -.35px; }
+.basketball-section-heading p { margin: 5px 0 0; color: #8b9086; font-size: 11px; }
+.record-collection-head .searchbox, .basketball-heading-actions .searchbox { min-width: min(270px, 40vw); height: 38px; border-radius: 10px; }
+.record-card-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 13px; }
+.finance-record-card { position: relative; display: flex; min-width: 0; min-height: 214px; flex-direction: column; padding: 16px; overflow: hidden; border: 1px solid #e7e9e3; border-radius: 15px; background: linear-gradient(150deg, #fff 0%, #fbfcf9 100%); box-shadow: 0 4px 14px #253c2e08; transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+.finance-record-card:hover { transform: translateY(-2px); border-color: #d7dfd4; box-shadow: 0 10px 25px #253c2e10; }
+.finance-card-heading { display: flex; align-items: center; min-width: 0; gap: 10px; }
+.finance-card-icon { display: grid; width: 38px; height: 38px; flex: 0 0 auto; place-items: center; border-radius: 12px; }
+.card-tone-sales { color: #577a5d; background: #eaf2e9; }.card-tone-purchases { color: #b4764e; background: #f8eee7; }.card-tone-it { color: #627f9d; background: #eaf0f6; }.card-tone-payroll { color: #776a9a; background: #efebf6; }
+.finance-card-title { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 3px; }
+.finance-card-title strong { overflow: hidden; color: #39473d; font-size: 13px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+.finance-card-title small { overflow: hidden; color: #8b9288; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.finance-card-menu { display: grid; width: 31px; height: 31px; flex: 0 0 auto; place-items: center; border: 1px solid #e9ece6; border-radius: 9px; background: #fff; color: #748176; cursor: pointer; }
+.finance-card-menu:hover { color: #45664b; background: #f3f7f1; }
+.finance-card-amount { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; margin: 17px 0 13px; }
+.finance-card-amount span { padding-bottom: 3px; color: #969b91; font-size: 9px; font-weight: 650; letter-spacing: .75px; }
+.finance-card-amount strong { overflow: hidden; color: #314238; font-size: clamp(19px, 2vw, 26px); font-weight: 650; letter-spacing: -1px; text-overflow: ellipsis; white-space: nowrap; }
+.finance-card-details { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: auto; padding: 11px 0; border-top: 1px solid #eef0ec; }
+.finance-card-detail { display: flex; min-width: 0; flex-direction: column; gap: 4px; }
+.finance-card-detail > span { color: #969b91; font-size: 8px; font-weight: 650; letter-spacing: .45px; text-transform: uppercase; }
+.finance-card-detail > strong { overflow: hidden; color: #59665b; font-size: 10px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.finance-card-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 10px; border-top: 1px solid #eef0ec; color: #90978d; font-size: 9px; }
+.finance-card-footer > span { display: inline-flex; min-width: 0; align-items: center; gap: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.finance-card-footer button { display: inline-flex; align-items: center; gap: 5px; flex: 0 0 auto; padding: 5px 7px; border: 0; border-radius: 7px; background: #fff5f2; color: #a36355; font-size: 9px; cursor: pointer; }
+.finance-card-footer button:hover { background: #fce9e4; }
+.record-collection-head .panel-kicker, .basketball-section-heading .panel-kicker { color: #899185; font-size: 9px; font-weight: 700; letter-spacing: 1px; }
+.record-loading, .record-empty { padding: 30px 15px; color: #8d9489; text-align: center; font-size: 11px; }
+.record-empty { display: grid; justify-items: center; gap: 7px; border: 1px dashed #dfe5dc; border-radius: 14px; background: #fbfcf9; }
+.record-empty strong { color: #4d5b4f; font-size: 13px; }
+.record-empty p { margin: 0 0 6px; }
+.basketball-heading-actions { display: flex; align-items: center; gap: 9px; }
+.basketball-heading-actions .button-outline { display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 12px; border-radius: 9px; white-space: nowrap; }
+.season-card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.season-income-card { min-width: 0; overflow: hidden; border: 1px solid #e4e9e1; border-radius: 15px; background: #fff; box-shadow: 0 4px 14px #253c2e08; }
+.season-income-active { border-color: #a8bba3; box-shadow: 0 8px 25px #334a3510; }
+.season-income-button, .month-income-button { display: flex; width: 100%; align-items: center; gap: 12px; padding: 16px; border: 0; background: transparent; color: inherit; text-align: left; cursor: pointer; }
+.season-income-icon { display: grid; width: 42px; height: 42px; flex: 0 0 auto; place-items: center; border-radius: 13px; background: #edf3ea; color: #55775b; }
+.season-income-copy { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 3px; }
+.season-income-copy small { color: #959b91; font-size: 8px; font-weight: 700; letter-spacing: .9px; }
+.season-income-copy strong { color: #344438; font-size: 17px; font-weight: 650; }
+.season-income-copy em { color: #8d958a; font-size: 9px; font-style: normal; }
+.season-income-total { color: #3b5842; font-size: 17px; font-weight: 700; white-space: nowrap; }
+.season-chevron { flex: 0 0 auto; color: #8d988c; transition: transform .18s; }.season-income-active .season-chevron { transform: rotate(180deg); }
+.season-months { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; padding: 0 12px 12px; }
+.month-income-card { min-width: 0; border: 1px solid #edf0eb; border-radius: 11px; background: #fafbf8; }
+.month-income-open { border-color: #d8e1d5; background: #fff; }
+.month-income-button { gap: 8px; padding: 11px; }
+.month-income-date { display: flex; min-width: 0; flex: 1; align-items: center; gap: 7px; color: #6d826c; }
+.month-income-date > span { overflow: hidden; color: #526254; font-size: 10px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.month-income-date small { color: #92998f; font-size: 9px; font-weight: 500; }
+.month-income-button > strong { color: #3b5842; font-size: 11px; white-space: nowrap; }
+.month-income-button > svg:last-child { flex: 0 0 auto; color: #92998f; }
+.month-income-entries { padding: 0 10px 9px; }
+.month-income-entry { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-top: 1px solid #eef0ec; color: #848d83; font-size: 9px; }
+.month-income-entry > span { flex: 1; }.month-income-entry > strong { color: #46594a; font-size: 10px; }.month-income-entry > div { display: flex; gap: 4px; }
+.month-income-entry button { display: grid; width: 25px; height: 25px; place-items: center; border: 1px solid #e7ece5; border-radius: 7px; background: white; color: #697b69; cursor: pointer; }.month-income-entry button:last-child { color: #a36355; background: #fff7f4; }
+@media (max-width: 1050px) { .record-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 720px) {
+  .record-collection, .basketball-income-section { margin-bottom: 15px; }
+  .record-collection-head, .basketball-section-heading { align-items: stretch; flex-direction: column; gap: 10px; }
+  .record-collection-head .searchbox, .basketball-heading-actions .searchbox { min-width: 0; width: 100%; }
+  .basketball-heading-actions { align-items: stretch; flex-direction: column; }
+  .basketball-heading-actions .button-outline { justify-content: center; }
+  .record-card-grid, .season-card-grid { grid-template-columns: 1fr; gap: 9px; }
+  .finance-record-card { min-height: 0; padding: 13px; border-radius: 13px; }
+  .finance-card-amount { margin: 13px 0 10px; }
+  .finance-card-amount strong { font-size: 23px; }
+  .finance-card-details { padding: 9px 0; }
+  .season-income-button { gap: 9px; padding: 13px; }
+  .season-income-total { font-size: 14px; }
+  .season-months { grid-template-columns: 1fr; padding: 0 9px 9px; }
+}
 .kpi-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .split-stats { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
 .analytics-panel, .commerce-chart-panel { padding: 18px 19px 16px; }
