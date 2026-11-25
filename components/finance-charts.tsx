@@ -1,6 +1,8 @@
 'use client'
 
 import { Bar, BarChart, CartesianGrid, Tooltip, XAxis, YAxis } from 'recharts'
+import { useState } from 'react'
+import { ChevronDown, ChevronUp } from 'lucide-react'
 import { ChartContainer, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart'
 
 type FinanceRow = Record<string, unknown>
@@ -48,6 +50,7 @@ export function SalesVsPurchasesChart({ salesValue, purchasesValue }: { salesVal
 }
 
 export function TopCommerceChart({ title, rows, valueKey, valueLabel }: { title: string; rows: FinanceRow[]; valueKey: string; valueLabel: string }) {
+  const [open, setOpen] = useState(false)
   const grouped = new Map<string, number>()
   for (const row of rows) {
     const name = String(row.COMERCIO ?? '').trim()
@@ -57,8 +60,8 @@ export function TopCommerceChart({ title, rows, valueKey, valueLabel }: { title:
   const chartConfig = { ...commerceConfig, amount: { label: valueLabel, color: 'var(--chart-1)' } } satisfies ChartConfig
 
   return <section className="panel commerce-chart-panel" aria-label={title}>
-    <div className="panel-heading"><div><span className="panel-kicker">TOP 5</span><h2>{title}</h2></div><span className="chart-period">{valueLabel}</span></div>
-    {chartData.length ? <ChartContainer config={chartConfig} className="commerce-chart">
+    <div className="panel-heading"><div><span className="panel-kicker">TOP 5 · {valueLabel}</span><h2>{title}</h2></div><button className="button-outline commerce-chart-toggle" aria-expanded={open} onClick={() => setOpen((current) => !current)}>{open ? 'Ocultar gráfica' : 'Ver gráfica'}{open ? <ChevronUp size={15} /> : <ChevronDown size={15} />}</button></div>
+    {open && (chartData.length ? <ChartContainer config={chartConfig} className="commerce-chart">
       <BarChart data={chartData} layout="vertical" accessibilityLayer margin={{ top: 5, right: 18, left: 4, bottom: 5 }}>
         <CartesianGrid horizontal={false} strokeDasharray="3 4" />
         <XAxis type="number" axisLine={false} tickLine={false} tickFormatter={(value) => `${Number(value).toLocaleString('es-ES')} €`} />
@@ -66,6 +69,6 @@ export function TopCommerceChart({ title, rows, valueKey, valueLabel }: { title:
         <Tooltip content={<ChartTooltipContent labelKey="name" formatter={(value) => euros(value)} />} />
         <Bar dataKey="amount" fill="var(--color-amount)" radius={[0, 5, 5, 0]} maxBarSize={24} />
       </BarChart>
-    </ChartContainer> : <p className="chart-empty">Aún no hay importes para comparar.</p>}
+    </ChartContainer> : <p className="chart-empty">Aún no hay importes para comparar.</p>)}
   </section>
 }
