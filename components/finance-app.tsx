@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import useSWR, { mutate } from 'swr'
 import { signOut } from 'next-auth/react'
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { TopCommerceChart } from '@/components/finance-charts'
 import { ArrowDownLeft, ArrowUpRight, Banknote, BarChart3, CalendarDays, Check, ChevronDown, CircleDollarSign, Computer, Database, Filter, LayoutDashboard, LogOut, Menu, Pencil, Plus, RefreshCw, Search, Share2, ShoppingBag, Trash2, Wallet, X } from 'lucide-react'
 
 type Row = Record<string, unknown> & { _id?: string; _rowNumber?: number }
@@ -39,6 +40,7 @@ function formatDate(value: unknown) {
   return new Intl.DateTimeFormat('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date)
 }
 const numericTotal = (rows: Row[] | undefined, key: string) => (rows ?? []).reduce((sum, row) => sum + parseAmount(row[key]), 0)
+const purchaseOutOfPocket = (row: Row) => Math.max(0, parseAmount(row['DINERO PAGADO']) * (row['A MEDIAS'] === true || ['sí', 'si'].includes(String(row['A MEDIAS'] ?? '').trim().toLocaleLowerCase('es')) ? 0.5 : 1) - parseAmount(row.REEMBOLSO))
 const amountPaid = (row: Row) => {
   if (row.PAGADO !== undefined) return parseAmount(row.PAGADO)
   const status = String(row.PAGADO ?? '').trim().toLocaleLowerCase('es')
@@ -111,10 +113,10 @@ export function FinanceApp({ user }: { user: { name?: string | null; email?: str
   const basketballRows = sortRowsByDateDesc((data?.basketball ?? []).filter(matchesQuery), 'Baloncesto')
   const payrollRows = data?.payroll ?? []
   const totals = {
-    sales: numericTotal(data?.sales, 'BENEFICIO'),
+    sales: numericTotal(data?.sales, 'DINERO RECOGIDO') - numericTotal(data?.sales, 'DINERO APORTADO'),
     salesCollected: numericTotal(data?.sales, 'DINERO RECOGIDO'),
     salesContributed: numericTotal(data?.sales, 'DINERO APORTADO'),
-    purchases: numericTotal(data?.purchases, 'PRECIO FINAL'),
+    purchases: (data?.purchases ?? []).reduce((sum, row) => sum + purchaseOutOfPocket(row), 0),
     refunds: numericTotal(data?.purchases, 'REEMBOLSO'),
     payroll: numericTotal(payrollRows, 'PAGADO'),
     basketball: numericTotal(data?.basketball, 'DINERO INGRESADO'),
@@ -122,6 +124,7 @@ export function FinanceApp({ user }: { user: { name?: string | null; email?: str
     itPaid: (data?.it ?? []).reduce((sum, row) => sum + amountPaid(row), 0),
   }
   const totalIncomes = totals.basketball + totals.salesCollected + totals.payroll + totals.itPaid
+  const basketballSeasons = new Set((data?.basketball ?? []).map(seasonForRow).filter(Boolean)).size
   const chart = [{ month: 'Baloncesto', amount: totals.basketball }, { month: 'Ventas', amount: totals.sales }, { month: 'Compras', amount: totals.purchases }, { month: 'Informática', amount: totals.itPaid }, { month: 'Nóminas', amount: totals.payroll }]
   const categories: Record<Exclude<Section, 'Dashboard'>, string> = { Baloncesto: 'basketball', Ventas: 'sales', Compras: 'purchases', 'Informática': 'it', Nóminas: 'payroll' }
   const payrollCount = payrollRows.length
@@ -183,7 +186,7 @@ export function FinanceApp({ user }: { user: { name?: string | null; email?: str
         {data?.warnings?.map((warning) => <div className="error-banner" role="alert" key={warning}><span>{warning}</span></div>)}
         {active === 'Dashboard' ? <>
           <div className="page-heading"><div><div className="eyebrow small-eyebrow"><span className="eyebrow-dot" /> RESUMEN PERSONAL</div><h1>Todo en <em>perspectiva.</em></h1><p>Un lugar para ver cómo se mueve tu dinero.</p></div><button className="button-primary" onClick={() => setShowCategoryChooser(true)}><Plus size={17} /> Añadir registro</button></div>
-          <div className="kpi-grid"><Kpi title="INGRESOS TOTALES" value={euros(totalIncomes)} icon={CircleDollarSign} tone="green" foot="Baloncesto, ventas, nóminas e informática" /><Kpi title="BENEFICIO EN VENTAS" value={euros(totals.sales)} icon={ArrowUpRight} tone="green" foot={`${data?.sales.length ?? 0} ventas registradas`} /><Kpi title="GASTO EN COMPRAS" value={euros(totals.purchases)} icon={ArrowDownLeft} tone="orange" foot={`${data?.purchases.length ?? 0} compras registradas`} /><Kpi title="COBRADO · INFORMÁTICA" value={euros(totals.itPaid)} icon={Computer} tone="violet" foot={`${data?.it.length ?? 0} trabajos registrados`} /><Kpi title="NÓMINAS RECIBIDAS" value={euros(totals.payroll)} icon={Banknote} tone="yellow" foot={`${payrollCount} pagos registrados`} /></div>
+          <div className="kpi-grid"><Kpi className="kpi-total" title="INGRESOS TOTALES" value={euros(totalIncomes)} icon={CircleDollarSign} tone="green" foot="Baloncesto, ventas, nóminas e informática" /><Kpi title="BENEFICIO EN VENTAS" value={euros(totals.sales)} icon={ArrowUpRight} tone="green" foot={`${data?.sales.length ?? 0} ventas registradas`} /><Kpi title="GASTO EN COMPRAS" value={euros(totals.purchases)} icon={ArrowDownLeft} tone="orange" foot={`${data?.purchases.length ?? 0} compras registradas`} /><Kpi title="BALONCESTO" value={euros(totals.basketball)} icon={BasketballIcon} tone="green" foot={`${basketballSeasons} ${basketballSeasons === 1 ? 'temporada' : 'temporadas'}`} /><Kpi title="COBRADO · INFORMÁTICA" value={euros(totals.itPaid)} icon={Computer} tone="violet" foot={`${data?.it.length ?? 0} trabajos registrados`} /><Kpi title="NÓMINAS RECIBIDAS" value={euros(totals.payroll)} icon={Banknote} tone="yellow" foot={`${payrollCount} pagos registrados`} /></div>
           <div className="dashboard-grid">
             <section className="panel chart-panel"><div className="panel-heading"><div><span className="panel-kicker">PANORAMA</span><h2>Balance por actividad</h2></div><span className="chart-period">Todas las secciones <ChevronDown size={14} /></span></div><div className="chart-summary"><strong>{euros(totalIncomes - totals.purchases)}</strong><span>balance neto registrado</span></div><div className="chart-wrap"><ResponsiveContainer width="100%" height="100%"><AreaChart data={chart} margin={{ top: 12, right: 6, left: 0, bottom: 0 }}><defs><linearGradient id="fillBalance" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#66947c" stopOpacity={0.28} /><stop offset="95%" stopColor="#66947c" stopOpacity={0.01} /></linearGradient></defs><CartesianGrid vertical={false} stroke="#e9e8df" strokeDasharray="3 4" /><XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#92948a', fontSize: 11 }} dy={10} /><YAxis axisLine={false} tickLine={false} tick={{ fill: '#92948a', fontSize: 10 }} tickFormatter={(value) => `${value}€`} width={50} /><Tooltip formatter={(value) => euros(value)} contentStyle={{ borderRadius: 12, borderColor: '#e6e5db', fontSize: 12 }} /><Area type="monotone" dataKey="amount" name="Importe" stroke="#547c67" strokeWidth={2.5} fill="url(#fillBalance)" /></AreaChart></ResponsiveContainer></div><div className="chart-legend"><span><i /> Importes acumulados</span><span>Fuente: tus datos</span></div></section>
             <section className="panel activity-panel"><div className="panel-heading"><div><span className="panel-kicker">TUS ÁREAS</span><h2>Actividad financiera</h2></div><button className="text-button" onClick={() => setActive('Baloncesto')}>Ver todo <ArrowUpRight size={14} /></button></div><div className="activity-list">{[{ name: 'Baloncesto', sub: 'Ingresos y temporadas', icon: BasketballIcon, total: totals.basketball, tone: 'activity-green' }, { name: 'Ventas', sub: `${data?.sales.length ?? 0} registros`, icon: CircleDollarSign, total: totals.sales, tone: 'activity-violet' }, { name: 'Compras', sub: `${data?.purchases.length ?? 0} registros`, icon: ShoppingBag, total: totals.purchases, tone: 'activity-orange' }, { name: 'Informática', sub: `${data?.it.length ?? 0} trabajos`, icon: Computer, total: totals.it, tone: 'activity-blue' }, { name: 'Nóminas', sub: `${data?.payroll.length ?? 0} empresas`, icon: Wallet, total: totals.payroll, tone: 'activity-yellow' }].map(({ name, sub, icon: Icon, total, tone }) => <button className={`activity-row ${tone}`} key={name} onClick={() => setActive(name as Section)}><span className={`activity-icon ${tone}`}><Icon size={17} /></span><span className="activity-copy"><strong>{name}</strong><small>{sub}</small></span><strong className="activity-total">{euros(total)}</strong><ArrowUpRight className="activity-arrow" size={15} /></button>)}</div><div className="activity-note"><span className="note-symbol">↗</span><span>Tus datos se guardan de forma segura en Neon.</span></div></section>
@@ -192,6 +195,8 @@ export function FinanceApp({ user }: { user: { name?: string | null; email?: str
         </> : <>
           <div className="page-heading section-heading"><div><div className="eyebrow small-eyebrow"><span className="eyebrow-dot" /> GESTIÓN PERSONAL</div><h1>{active === 'Baloncesto' ? 'Baloncesto' : active}<span className="heading-period">.</span></h1><p>{sectionDescription(active)}</p></div><button className="button-primary" onClick={openAddRecord}><Plus size={17} /> Añadir registro</button></div>
           {active === 'Baloncesto' ? <BasketballIncomeCards rows={basketballRows} query={query} onQueryChange={setQuery} isLoading={isLoading} onAdd={openAddRecord} onEdit={editRecord} onDelete={deleteRecord} /> : null}
+          {active === 'Ventas' && <TopCommerceChart title="Comercios con más ventas" rows={data?.sales ?? []} valueKey="DINERO RECOGIDO" valueLabel="Dinero recogido" />}
+          {active === 'Compras' && <TopCommerceChart title="Comercios con más compras" rows={data?.purchases ?? []} valueKey="DINERO PAGADO" valueLabel="Dinero pagado" />}
           {active !== 'Baloncesto' && <RecordCards section={active} rows={filteredRows} isLoading={isLoading} query={query} onQueryChange={setQuery} onEdit={editRecord} onDelete={deleteRecord} onAdd={openAddRecord} />}
         </>}
       </div>
@@ -273,7 +278,7 @@ function BasketballIncomeCards({ rows, query, onQueryChange, isLoading, onAdd, o
   </section>
 }
 
-function Kpi({ title, value, icon: Icon, tone, foot }: { title: string; value: string; icon: typeof ArrowUpRight; tone: string; foot: string }) { return <article className="kpi-card"><div className="kpi-top"><span>{title}</span><span className={`kpi-icon ${tone}`}><Icon size={17} /></span></div><strong className="kpi-value">{value}</strong><div className="kpi-foot"><span className="kpi-dash" />{foot}</div></article> }
+function Kpi({ title, value, icon: Icon, tone, foot, className = '' }: { title: string; value: string; icon: ComponentType<{ size?: number; strokeWidth?: number }>; tone: string; foot: string; className?: string }) { return <article className={`kpi-card ${className}`}><div className="kpi-top"><span>{title}</span><span className={`kpi-icon ${tone}`}><Icon size={17} /></span></div><strong className="kpi-value">{value}</strong><div className="kpi-foot"><span className="kpi-dash" />{foot}</div></article> }
 function SplitCard({ title, value, foot, tone }: { title: string; value: string; foot: string; tone?: string }) { return <div className={`split-card ${tone ?? ''}`}><span>{title}</span><strong>{value}</strong><small>{foot}</small></div> }
 function sectionDescription(section: Section) { return ({ Baloncesto: 'Consulta tus ingresos por mes y el total acumulado de cada temporada.', Ventas: 'Sigue las ventas, aportaciones y el beneficio generado.', Compras: 'Registra tus compras, pagos y reembolsos.', 'Informática': 'Organiza trabajos, fechas de entrega e importes.', Nóminas: 'Consulta los pagos mensuales de cada empresa.' } as Record<string, string>)[section] ?? '' }
 function tableColumns(section: Section) { if (section === 'Baloncesto') return ['MES', 'AÑO', 'TEMPORADA', 'DINERO INGRESADO']; if (section === 'Ventas') return ['VENTAS', 'COMERCIO', 'DINERO APORTADO', 'DINERO RECOGIDO', 'BENEFICIO', 'FECHA DE REGISTRO']; if (section === 'Compras') return ['COMPRAS', 'COMERCIO', 'DINERO PAGADO', 'A MEDIAS', 'REEMBOLSO', 'PRECIO FINAL', 'FECHA DE REGISTRO']; if (section === 'Informática') return ['CLIENTE', 'TRABAJO', 'FECHA DE INICIO', 'FECHA DE FINALIZACIÓN', 'IMPORTE', 'PAGADO', 'FECHA DE REGISTRO']; if (section === 'Nóminas') return ['EMPRESA', 'MES', 'AÑO', 'PAGADO']; return [] }
