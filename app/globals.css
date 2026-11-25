@@ -162,7 +162,7 @@
 .topbar-refresh { width: 32px; height: 32px; margin-right: 8px; border: 0; background: transparent; }
 .topbar-refresh:hover { border: 0; background: #ecefe8; }
 .sidebar-brand .brand-mark { width: 34px; height: 34px; overflow: visible; border-radius: 0; background: none; }
-.brand-mark img { display: block; width: 100%; height: 100%; border-radius: 0; object-fit: contain; }
+.brand-mark img { display: block; width: 100%; height: 100%; border-radius: 2px; object-fit: contain; }
 @media (max-width: 720px) { .topbar-right { gap: 10px; } }
 .finance-record-card { min-height: 0; padding: 0; border: 1px solid #dce2da; border-radius: 13px; background: #fff; box-shadow: none; }
 .finance-record-card:hover { transform: none; border-color: #cbd6c9; box-shadow: 0 2px 8px #243b2c0a; }
