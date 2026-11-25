@@ -245,3 +245,17 @@
 
 .commerce-ranking { display: grid; gap: 17px; padding: 22px 4px 10px; }.commerce-ranking-row { display: grid; grid-template-columns: 30px minmax(0, 1fr); align-items: center; gap: 13px; }.commerce-ranking-index { color: #9ba69b; font-size: 10px; font-variant-numeric: tabular-nums; }.commerce-ranking-content { display: grid; min-width: 0; gap: 8px; }.commerce-ranking-label { display: flex; min-width: 0; align-items: baseline; justify-content: space-between; gap: 12px; }.commerce-ranking-label strong { overflow: hidden; color: #46554a; font-size: 11px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }.commerce-ranking-label b { color: #68796b; font-size: 10px; font-weight: 600; white-space: nowrap; }.commerce-ranking-track { height: 6px; overflow: hidden; border-radius: 99px; background: #f0f3ee; }.commerce-ranking-track i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #a9bba5, #64876b); transition: width .35s ease; }
 @media (max-width: 720px) { .commerce-ranking { gap: 15px; padding: 18px 2px 8px; }.commerce-ranking-row { grid-template-columns: 24px minmax(0, 1fr); gap: 9px; } }
+
+/* Fiskal brand palette shared by sign-in and the finance workspace */
+:root { --brand-dark: #283a31; --brand-lime: #d7e985; --brand-lime-hover: #e2f39b; --brand-lime-soft: #eff4d8; }
+.button-primary { color: var(--brand-dark); background: var(--brand-lime); border-color: var(--brand-lime); box-shadow: 0 2px 5px #283a3118; }
+.button-primary:hover { color: var(--brand-dark); background: var(--brand-lime-hover); border-color: var(--brand-lime-hover); }
+.sidebar-brand .brand-mark { color: var(--brand-dark); background: var(--brand-lime); }
+.nav-active { color: var(--brand-dark); background: var(--brand-lime-soft); }
+.nav-active > svg { color: var(--brand-dark); }.nav-indicator { background: var(--brand-dark); }
+.small-eyebrow { color: #586c5c; }
+.small-eyebrow .eyebrow-dot { background: var(--brand-lime); box-shadow: 0 0 0 3px #d7e98555; }
+.kpi-icon.green { color: var(--brand-dark); background: var(--brand-lime-soft); }
+.kpi-dash { background: #899b52; }
+.chart-legend i { background: var(--brand-dark); }
+.commerce-ranking-track i { background: linear-gradient(90deg, var(--brand-lime), var(--brand-dark)); }
