@@ -14,7 +14,7 @@ type RecordIdentity = { id: string }
 const sections: { name: Section; icon: ComponentType<{ size?: number; strokeWidth?: number }>; key?: keyof Data }[] = [
   { name: 'Dashboard', icon: LayoutDashboard }, { name: 'Baloncesto', icon: BasketballIcon }, { name: 'Ventas', icon: CircleDollarSign, key: 'sales' }, { name: 'Compras', icon: ShoppingBag, key: 'purchases' }, { name: 'Informática', icon: Computer, key: 'it' }, { name: 'Nóminas', icon: Wallet, key: 'payroll' },
 ]
-function BasketballIcon({ size = 18, strokeWidth = 1.8 }: { size?: number; strokeWidth?: number }) { return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.2" /><path d="M4 7.5c4 1 7.2 5 8 12.8M20 7.5c-4 1-7.2 5-8 12.8M3 12h18" /></svg> }
+function BasketballIcon({ size = 18, strokeWidth = 1.8 }: { size?: number; strokeWidth?: number }) { return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.2" /><path d="M12 2.8c0 4.4-3.6 5.3-3.6 9.2s3.6 4.8 3.6 9.2M2.8 12c4.4 0 5.3 3.6 9.2 3.6s4.8-3.6 9.2-3.6" /></svg> }
 const fetcher = async (url: string) => { const response = await fetch(url); const data = await response.json(); if (!response.ok) throw new Error(data.error || 'No se pudo cargar la hoja'); return data as Data }
 const parseAmount = (value: unknown) => {
   if (typeof value === 'number') return Number.isFinite(value) ? value : 0
