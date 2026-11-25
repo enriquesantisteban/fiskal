@@ -12,11 +12,6 @@ const comparisonConfig = {
   purchases: { label: 'Gasto final', color: 'var(--destructive)' },
 } satisfies ChartConfig
 
-const commerceConfig = {
-  amount: { label: 'Importe', color: 'var(--chart-1)' },
-  name: { label: 'Comercio' },
-} satisfies ChartConfig
-
 function numericAmount(value: unknown) {
   if (typeof value === 'number') return Number.isFinite(value) ? value : 0
   let normalized = String(value ?? '').trim().replace(/\s|€|EUR/gi, '').replace(/[^\d,.-]/g, '')
@@ -56,18 +51,15 @@ export function TopCommerceChart({ title, rows, valueKey, valueLabel }: { title:
     const name = String(row.COMERCIO ?? '').trim()
     if (name) grouped.set(name, (grouped.get(name) ?? 0) + numericAmount(row[valueKey]))
   }
-  const chartData = [...grouped].map(([name, amount]) => ({ name, amount })).sort((a, b) => b.amount - a.amount).slice(0, 5)
-  const chartConfig = { ...commerceConfig, amount: { label: valueLabel, color: 'var(--chart-1)' } } satisfies ChartConfig
-
+  const chartData = [...grouped].map(([name, amount]) => ({ name, amount })).sort((a, b) => b.amount - a.amount || a.name.localeCompare(b.name, 'es')).slice(0, 5)
+  const maxAmount = chartData[0]?.amount || 1
   return <section className="panel commerce-chart-panel" aria-label={title}>
     <div className="panel-heading"><div><span className="panel-kicker">TOP 5 · {valueLabel}</span><h2>{title}</h2></div><button className="button-outline commerce-chart-toggle" aria-expanded={open} onClick={() => setOpen((current) => !current)}>{open ? 'Ocultar gráfica' : 'Ver gráfica'}{open ? <ChevronUp size={15} /> : <ChevronDown size={15} />}</button></div>
-    {open && (chartData.length ? <ChartContainer config={chartConfig} className="commerce-chart">
-      <BarChart data={chartData} layout="vertical" accessibilityLayer margin={{ top: 4, right: 20, left: 2, bottom: 4 }}>
-        <XAxis type="number" axisLine={false} tickLine={false} tick={false} />
-        <YAxis type="category" dataKey="name" width={132} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#657267' }} />
-        <Tooltip content={<ChartTooltipContent labelKey="name" formatter={(value) => euros(value)} />} />
-        <Bar dataKey="amount" fill="var(--color-amount)" radius={[0, 8, 8, 0]} maxBarSize={18} activeBar={{ fill: '#77977b' }} />
-      </BarChart>
-    </ChartContainer> : <p className="chart-empty">Aún no hay importes para comparar.</p>)}
-  </section>
+    {open && (chartData.length ? <div className="commerce-ranking" role="list" aria-label={`Cinco principales: ${title}`}>
+      {chartData.map(({ name, amount }, index) => <div className="commerce-ranking-row" role="listitem" key={name}>
+        <span className="commerce-ranking-index">{String(index + 1).padStart(2, '0')}</span>
+        <span className="commerce-ranking-content"><span className="commerce-ranking-label"><strong title={name}>{name}</strong><b>{euros(amount)}</b></span><span className="commerce-ranking-track"><i style={{ width: `${Math.max(4, (amount / maxAmount) * 100)}%` }} /></span></span>
+      </div>)}
+    </div> : <p className="chart-empty">Todavía no hay importes para comparar.</p>)}
+    </section>
 }
