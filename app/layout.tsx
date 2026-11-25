@@ -6,7 +6,10 @@ export const metadata: Metadata = {
   title: 'Fiskal — Enrique',
   description: 'Tu espacio privado para organizar ingresos, compras, ventas, proyectos y nóminas.',
   applicationName: 'Fiskal',
-  icons: { icon: '/icon.svg', apple: '/apple-icon.png' },
+  icons: {
+    icon: [{ url: '/apple-icon.png', type: 'image/png', sizes: '1024x1024' }],
+    apple: [{ url: '/apple-icon.png', type: 'image/png', sizes: '1024x1024' }],
+  },
 }
 
 export const viewport: Viewport = {
